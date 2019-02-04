@@ -42,10 +42,10 @@ public class WorkflowFrame extends JFrame {
 		workflows = new JPanel();
 		workflows.setLayout(new MigLayout("fill"));
 
-		inputPanel = new InputPanel();
-		networkPanel = new NetworkPanel();
-		segmentationPanel = new SegmentationPanel();
-		outputPanel = new ResultPanel();
+		inputPanel = new InputPanel(wf.getInputStep());
+		networkPanel = new NetworkPanel(wf.getNetworkStep());
+		segmentationPanel = new SegmentationPanel(wf.getSegmentationStep());
+		outputPanel = new ResultPanel(wf.getOutputStep());
 
 		workflows.add(inputPanel, "grow, width 25%:25%:25%");
 		workflows.add(networkPanel, "grow, width 25%:25%:25%");
@@ -55,7 +55,7 @@ public class WorkflowFrame extends JFrame {
 		this.setContentPane(workflows);
 		inputPanel.init(this, "INPUT [q,w]");
 		networkPanel.init(this, "DENOISE [e,r]");
-		segmentationPanel.init(this, "SEGMENTATION [z,x, <- ->]");
+		segmentationPanel.init(this, "SEGMENTATION [z, ← →]");
 		outputPanel.init("RESULT");
 	}
 
@@ -77,6 +77,10 @@ public class WorkflowFrame extends JFrame {
 		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_R, 0), keyNetwork2);
 		actionMap.put(keyNetwork1, new ChangeNetworkAction(keyNetwork1, 0));
 		actionMap.put(keyNetwork2, new ChangeNetworkAction(keyNetwork2, 1));
+
+		String keySegmentation1 = "segmentation1";
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, 0), keySegmentation1);
+		actionMap.put(keySegmentation1, new ChangeSegmentationAction(keySegmentation1, 0));
 
 		String keyThresholdDown = "thresholdDown";
 		String keyThresholdUp = "thresholdUp";
@@ -101,7 +105,17 @@ public class WorkflowFrame extends JFrame {
 		public void actionPerformed(ActionEvent actionEvt) {
 			System.out.println(actionEvt.getActionCommand() + " pressed");
 			new Thread(() -> {
-				wf.setInput(id);
+				outputPanel.reset();
+				segmentationPanel.removeBdv();
+				networkPanel.removeBdv();
+				inputPanel.removeBdv();
+				if(wf.getInputStep().getCurrentId() == id &&
+					wf.getInputStep().isActivated()) {
+					wf.getInputStep().setActivated(false);
+				} else {
+					wf.getInputStep().setActivated(true);
+					wf.setInput(id);
+				}
 				wf.run();
 				updateContent();
 			}).start();
@@ -119,9 +133,48 @@ public class WorkflowFrame extends JFrame {
 		public void actionPerformed(ActionEvent actionEvt) {
 			System.out.println(actionEvt.getActionCommand() + " pressed");
 			new Thread(() -> {
-				wf.setNetwork(id);
+				outputPanel.reset();
+				segmentationPanel.removeBdv();
+				networkPanel.removeBdv();
+				if(wf.getNetworkStep().getCurrentId() == id &&
+						wf.getNetworkStep().isActivated()) {
+					wf.getNetworkStep().setActivated(false);
+				} else {
+					wf.getNetworkStep().setActivated(true);
+					wf.setNetwork(id);
+				}
 				wf.run();
-				updateContent();
+				networkPanel.update();
+				segmentationPanel.update();
+				outputPanel.update();
+			}).start();
+		}
+	}
+
+	private class ChangeSegmentationAction extends AbstractAction {
+		private final int id;
+		public ChangeSegmentationAction(String actionCommand, final int id) {
+			this.id = id;
+			putValue(ACTION_COMMAND_KEY, actionCommand);
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent actionEvt) {
+			System.out.println(actionEvt.getActionCommand() + " pressed");
+			new Thread(() -> {
+				outputPanel.reset();
+				segmentationPanel.removeBdv();
+				if(wf.getSegmentationStep().getCurrentId() == id &&
+						wf.getSegmentationStep().isActivated()) {
+					wf.getSegmentationStep().setActivated(false);
+				} else {
+					wf.getSegmentationStep().setActivated(true);
+					wf.setSegmentation(id);
+				}
+				wf.runSegmentation();
+				wf.calculateOutput();
+				segmentationPanel.update();
+				outputPanel.update();
 			}).start();
 		}
 	}
@@ -140,8 +193,8 @@ public class WorkflowFrame extends JFrame {
 				wf.setThreshold(wf.getThreshold()+change);
 				wf.runSegmentation();
 				wf.calculateOutput();
-				segmentationPanel.showInput(wf.getSegmentedInput());
-				outputPanel.showOutput(wf.getOutput());
+				segmentationPanel.update();
+				outputPanel.update();
 			}).start();
 		}
 	}
@@ -151,9 +204,9 @@ public class WorkflowFrame extends JFrame {
 	}
 
 	private void updateContent() {
-		inputPanel.showInput(wf.getInput());
-		networkPanel.showInput(wf.getDenoisedInput());
-		segmentationPanel.showInput(wf.getSegmentedInput());
-		outputPanel.showOutput(wf.getOutput());
+		inputPanel.update();
+		networkPanel.update();
+		segmentationPanel.update();
+		outputPanel.update();
 	}
 }

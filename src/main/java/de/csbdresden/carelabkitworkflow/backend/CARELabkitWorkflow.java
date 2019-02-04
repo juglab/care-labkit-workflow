@@ -1,5 +1,9 @@
 package de.csbdresden.carelabkitworkflow.backend;
 
+import de.csbdresden.carelabkitworkflow.model.InputStep;
+import de.csbdresden.carelabkitworkflow.model.NetworkStep;
+import de.csbdresden.carelabkitworkflow.model.OutputStep;
+import de.csbdresden.carelabkitworkflow.model.SegmentationStep;
 import de.csbdresden.csbdeep.commands.GenericNetwork;
 import net.imagej.ops.OpService;
 import net.imglib2.algorithm.labeling.ConnectedComponents;
@@ -15,6 +19,8 @@ import org.scijava.io.IOService;
 import org.scijava.plugin.Parameter;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 public class CARELabkitWorkflow {
@@ -28,14 +34,21 @@ public class CARELabkitWorkflow {
 	@Parameter
 	private CommandService commandService;
 
-	private Img input;
-	private Img denoisedInput;
-	private Img segmentedInput;
-	private String modelUrl;
-	private boolean useLabkit = false; // otherwise threshold
-	private boolean doDenoising = false;
-	private int output;
-	private float threshold = 0.5f;
+	private Map<String, InputCache> inputs = new HashMap<>();
+	InputCache input;
+
+	private InputStep inputStep;
+	private NetworkStep networkStep;
+	private SegmentationStep segmentationStep;
+	private OutputStep outputStep;
+
+	public CARELabkitWorkflow() {
+		inputStep = new InputStep();
+		networkStep = new NetworkStep();
+		segmentationStep = new SegmentationStep();
+		outputStep = new OutputStep();
+		outputStep.setActivated(true);
+	}
 
 	public void run() {
 		runNetwork();
@@ -44,12 +57,15 @@ public class CARELabkitWorkflow {
 	}
 
 	public void calculateOutput() {
-		if(segmentedInput != null) {
-			ImgLabeling cca = opService.labeling().cca(segmentedInput, ConnectedComponents.StructuringElement.FOUR_CONNECTED);
-			LabelRegions<IntegerType> regions = new LabelRegions(cca);
-			output = regions.getExistingLabels().size();
-			System.out.println("Threshold: " + threshold + ", calculated output " + output);
-		}
+		Img segmentedInput = segmentationStep.getImage();
+		if(!outputStep.isActivated() || segmentedInput == null) {
+			outputStep.setResult(-1);
+			return;
+		};
+		ImgLabeling cca = opService.labeling().cca(segmentedInput, ConnectedComponents.StructuringElement.FOUR_CONNECTED);
+		LabelRegions<IntegerType> regions = new LabelRegions(cca);
+		outputStep.setResult(regions.getExistingLabels().size());
+		System.out.println("Threshold: " + segmentationStep.getThreshold() + ", calculated output " + outputStep.getResult());
 	}
 
 	private void runLabkit() {
@@ -61,88 +77,129 @@ public class CARELabkitWorkflow {
 			Pair<T, T> minMax = getMinMax(getSegmentationInput());
 			T threshold = minMax.getB().copy();
 			threshold.sub(minMax.getA());
-			threshold.mul(this.threshold);
+			threshold.mul(segmentationStep.getThreshold());
 			threshold.add(minMax.getA());
-			segmentedInput = (Img) opService.threshold().apply(getSegmentationInput(), threshold);
+			segmentationStep.setImage((Img) opService.threshold().apply(getSegmentationInput(), threshold));
 		}
 	}
 
 	private Img getSegmentationInput() {
-		return doDenoising? denoisedInput : input;
+		return networkStep.isActivated()? networkStep.getImage() : inputStep.getImage();
 	}
 
 	public void runSegmentation() {
-		if(useLabkit) runLabkit();
+		if(!segmentationStep.isActivated()
+			|| getSegmentationInput() == null
+			|| !inputStep.isActivated()) {
+			segmentationStep.setImage(null);
+			return;
+		}
+		if(segmentationStep.isUseLabkit()) runLabkit();
 		else runThreshold();
 	}
 
 	public void runNetwork() {
-		if(input == null) return;
+		if(!networkStep.isActivated()
+				|| inputStep.getImage() == null
+				|| !inputStep.isActivated()) {
+			networkStep.setImage(null);
+			return;
+		}
+		if(networkStep.getModelUrl() == null) return;
+		Img denoisedImg = input.getDenoised(networkStep.getModelUrl());
+		if(denoisedImg != null) {
+			networkStep.setImage(denoisedImg);
+			return;
+		}
 		try {
 			final CommandModule module = commandService.run(
 					GenericNetwork.class, false,
-					"input", input,
-					"modelUrl", modelUrl,
+					"input", getInput(),
+					"modelUrl", networkStep.getModelUrl(),
 					"nTiles", 10,
 					"showProgressDialog", false).get();
-			denoisedInput = (Img) module.getOutput("output");
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} catch (ExecutionException e) {
+			networkStep.setImage((Img) module.getOutput("output"));
+			input.setDenoised(networkStep.getModelUrl(), networkStep.getImage());
+		} catch (InterruptedException | ExecutionException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public boolean isUseLabkit() {
-		return useLabkit;
-	}
-
-	public void setUseLabkit(boolean useLabkit) {
-		this.useLabkit = useLabkit;
-	}
-
 	public int getOutput() {
-		return output;
+		return outputStep.getResult();
 	}
 
 	public void setInput(int id) {
 		String url = "";
 		if(id == 0) url = "tribolium.tif";
 		if(id == 1) url = "planaria.tif";
+		inputStep.setCurrentId(id);
+		if(inputs.containsKey(url)) {
+			input = inputs.get(url);
+			inputStep.setImage(input.getInput());
+			return;
+		}
 		try {
-			input = (Img) ioService.open(this.getClass().getResource(url).getPath());
+			Img inputimg = (Img) ioService.open(this.getClass().getResource(url).getPath());
+			if(inputimg != null) {
+				input =  new InputCache(inputimg);
+				inputs.put(url, input);
+				inputStep.setImage(input.getInput());
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	public Img getInput() {
-		return input;
+		return inputStep.getImage();
 	}
 
 	public Img getDenoisedInput() {
-		return denoisedInput;
+		return networkStep.getImage();
 	}
 
 	public Img getSegmentedInput() {
-		return segmentedInput;
+		return segmentationStep.getImage();
 	}
 
 	public void setNetwork(int id) {
-		if(id == 0) modelUrl = "http://csbdeep.bioimagecomputing.com/model-tribolium.zip";
-		if(id == 1) modelUrl = "http://csbdeep.bioimagecomputing.com/model-planaria.zip";
+		if(id == 0) networkStep.setModelUrl("http://csbdeep.bioimagecomputing.com/model-tribolium.zip");
+		if(id == 1) networkStep.setModelUrl("http://csbdeep.bioimagecomputing.com/model-planaria.zip");
+		networkStep.setCurrentId(id);
+	}
+
+	public void setSegmentation(int id) {
+		segmentationStep.setUseLabkit(id == 1);
+		segmentationStep.setCurrentId(id);
 	}
 
 	public float getThreshold() {
-		return threshold;
+		return segmentationStep.getThreshold();
 	}
 
 	public void setThreshold(float threshold) {
 		if(threshold >= 0 && threshold <= 1)
-			this.threshold = threshold;
+			segmentationStep.setThreshold(threshold);
 	}
 
 	public <T extends RealType<T>> Pair<T, T> getMinMax(Img input) {
 		return opService.stats().minMax(input);
+	}
+
+	public InputStep getInputStep() {
+		return inputStep;
+	}
+
+	public NetworkStep getNetworkStep() {
+		return networkStep;
+	}
+
+	public SegmentationStep getSegmentationStep() {
+		return segmentationStep;
+	}
+
+	public OutputStep getOutputStep() {
+		return outputStep;
 	}
 }

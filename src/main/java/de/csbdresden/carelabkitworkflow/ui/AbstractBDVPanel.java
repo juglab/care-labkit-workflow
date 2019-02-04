@@ -13,24 +13,25 @@ import net.miginfocom.swing.MigLayout;
 import javax.swing.*;
 import java.awt.*;
 
-public class BDVPanel extends JPanel {
+public abstract class AbstractBDVPanel extends JPanel {
 
 	protected BdvHandlePanel bdv;
 	private WorkflowFrame parent;
+	protected Color bgColor;
 
 	public void init(WorkflowFrame parent, String title) {
 		this.parent = parent;
-		setLayout(new MigLayout());
-		add(new JLabel(title));
+		setLayout(new MigLayout("fill"));
+		JLabel titleLabel = new JLabel(title);
+		titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+		add(titleLabel, "aligny bottom");
 	}
 
-	public<T extends RealType<T>>  void showInput(Img input) {
-		if(bdv != null) {
-			remove(bdv.getViewerPanel());
-			bdv.close();
-		}
+	public<T extends RealType<T>>  void showInBdv(Img input) {
+		removeBdv();
 		if(input != null) {
 			bdv = new BdvHandlePanel( parent, Bdv.options().is2D() );
+			if(bgColor != null) bdv.getViewerPanel().setBackground(bgColor);
 			add( bdv.getViewerPanel(), "push, span, grow", 0);
 			BdvFunctions.show( input, "input", Bdv.options().addTo( bdv ) );
 			final SetupAssignments sa = bdv.getBdvHandle().getSetupAssignments();
@@ -38,7 +39,16 @@ public class BDVPanel extends JPanel {
 			Pair<T, T> minMax = parent.getMinMax(input);
 			group.getMinBoundedValue().setCurrentValue( minMax.getA().getRealDouble() );
 			group.getMaxBoundedValue().setCurrentValue( minMax.getB().getRealDouble() );
-			this.revalidate();
+			revalidate();
+		}
+	}
+
+	public void removeBdv() {
+		if(bdv != null) {
+			remove(bdv.getViewerPanel());
+			bdv.close();
+			revalidate();
+			repaint();
 		}
 	}
 }
