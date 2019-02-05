@@ -5,6 +5,8 @@ import net.imglib2.img.Img;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Pair;
 import net.miginfocom.swing.MigLayout;
+import org.scijava.app.StatusService;
+import org.scijava.event.*;
 import org.scijava.plugin.Parameter;
 import org.scijava.thread.ThreadService;
 
@@ -13,11 +15,11 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class WorkflowFrame extends JFrame {
-
-	@Parameter
-	private ThreadService threadService;
 
 	private final CARELabkitWorkflow wf;
 
@@ -30,6 +32,11 @@ public class WorkflowFrame extends JFrame {
 
 	private Font font = new Font(Font.MONOSPACED, Font.PLAIN, 16);
 
+	private boolean fullScreen = false;
+
+	static GraphicsDevice device = GraphicsEnvironment
+			.getLocalGraphicsEnvironment().getScreenDevices()[0];
+
 	public WorkflowFrame(CARELabkitWorkflow wf) {
 		super("CARE Labkit workflow");
 		this.wf = wf;
@@ -40,17 +47,18 @@ public class WorkflowFrame extends JFrame {
 	private void createWorkflowPanels() {
 
 		workflows = new JPanel();
-		workflows.setLayout(new MigLayout("fill"));
+		workflows.setLayout(new MigLayout("fill, gap 0, ins 20 0 20 0", "push[]push[]push[]push[]push"));
 
 		inputPanel = new InputPanel(wf.getInputStep());
 		networkPanel = new NetworkPanel(wf.getNetworkStep());
 		segmentationPanel = new SegmentationPanel(wf.getSegmentationStep());
 		outputPanel = new ResultPanel(wf.getOutputStep());
 
-		workflows.add(inputPanel, "grow, width 25%:25%:25%");
-		workflows.add(networkPanel, "grow, width 25%:25%:25%");
-		workflows.add(segmentationPanel, "grow, width 25%:25%:25%");
-		workflows.add(outputPanel, "grow, width 25%:25%:25%");
+		String w = "(25%-25px)";
+		workflows.add(inputPanel, "grow, width "+w+":"+w+":"+w);
+		workflows.add(networkPanel, "grow, width "+w+":"+w+":"+w);
+		workflows.add(segmentationPanel, "grow, width "+w+":"+w+":"+w);
+		workflows.add(outputPanel, "grow, width "+w+":"+w+":"+w);
 
 		this.setContentPane(workflows);
 		inputPanel.init(this, "INPUT [q,w]");
@@ -88,10 +96,36 @@ public class WorkflowFrame extends JFrame {
 		inputMap.put(KeyStroke.getKeyStroke("released RIGHT"), keyThresholdUp);
 		actionMap.put(keyThresholdDown, new ChangeThresholdAction(keyThresholdDown, -0.05f));
 		actionMap.put(keyThresholdUp, new ChangeThresholdAction(keyThresholdUp, +0.05f));
+
+		String keyFullScreen = "fullscreen";
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F, 0), keyFullScreen);
+		actionMap.put(keyFullScreen, new FullScreenAction(keyFullScreen));
 	}
 
 	public <T extends RealType<T>> Pair<T, T> getMinMax(Img input) {
 		return wf.getMinMax(input);
+	}
+
+	private class FullScreenAction extends AbstractAction {
+		public FullScreenAction(String actionCommand) {
+			putValue(ACTION_COMMAND_KEY, actionCommand);
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent actionEvt) {
+			System.out.println(actionEvt.getActionCommand() + " pressed");
+			toggleFullScreen();
+		}
+	}
+
+	private void toggleFullScreen() {
+		fullScreen = !fullScreen;
+		if(fullScreen) {
+			device.setFullScreenWindow(this);
+		}else {
+			device.setFullScreenWindow(null);
+		}
+		setVisible(true);
 	}
 
 	private class ChangeInputAction extends AbstractAction {
@@ -116,8 +150,21 @@ public class WorkflowFrame extends JFrame {
 					wf.getInputStep().setActivated(true);
 					wf.setInput(id);
 				}
-				wf.run();
-				updateContent();
+				inputPanel.startProgress();
+				inputPanel.update();
+				inputPanel.endProgress();
+				networkPanel.startProgress();
+				wf.runNetwork();
+				networkPanel.update();
+				networkPanel.endProgress();
+				segmentationPanel.startProgress();
+				wf.runSegmentation();
+				segmentationPanel.update();
+				segmentationPanel.endProgress();
+				outputPanel.startProgress();
+				wf.calculateOutput();
+				outputPanel.update();
+				outputPanel.endProgress();
 			}).start();
 		}
 	}
@@ -143,10 +190,18 @@ public class WorkflowFrame extends JFrame {
 					wf.getNetworkStep().setActivated(true);
 					wf.setNetwork(id);
 				}
-				wf.run();
+				networkPanel.startProgress();
+				wf.runNetwork();
 				networkPanel.update();
+				networkPanel.endProgress();
+				segmentationPanel.startProgress();
+				wf.runSegmentation();
 				segmentationPanel.update();
+				segmentationPanel.endProgress();
+				outputPanel.startProgress();
+				wf.calculateOutput();
 				outputPanel.update();
+				outputPanel.endProgress();
 			}).start();
 		}
 	}
@@ -171,10 +226,14 @@ public class WorkflowFrame extends JFrame {
 					wf.getSegmentationStep().setActivated(true);
 					wf.setSegmentation(id);
 				}
+				segmentationPanel.startProgress();
 				wf.runSegmentation();
-				wf.calculateOutput();
 				segmentationPanel.update();
+				segmentationPanel.endProgress();
+				outputPanel.startProgress();
+				wf.calculateOutput();
 				outputPanel.update();
+				outputPanel.endProgress();
 			}).start();
 		}
 	}
@@ -190,11 +249,15 @@ public class WorkflowFrame extends JFrame {
 		public void actionPerformed(ActionEvent actionEvt) {
 			System.out.println(actionEvt.getActionCommand() + " pressed");
 			new Thread(() -> {
+				segmentationPanel.startProgress();
 				wf.setThreshold(wf.getThreshold()+change);
 				wf.runSegmentation();
-				wf.calculateOutput();
 				segmentationPanel.update();
+				segmentationPanel.endProgress();
+				outputPanel.startProgress();
+				wf.calculateOutput();
 				outputPanel.update();
+				outputPanel.endProgress();
 			}).start();
 		}
 	}
@@ -203,10 +266,4 @@ public class WorkflowFrame extends JFrame {
 		dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
 	}
 
-	private void updateContent() {
-		inputPanel.update();
-		networkPanel.update();
-		segmentationPanel.update();
-		outputPanel.update();
-	}
 }

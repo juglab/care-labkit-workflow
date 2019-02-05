@@ -13,7 +13,7 @@ import net.miginfocom.swing.MigLayout;
 import javax.swing.*;
 import java.awt.*;
 
-public abstract class AbstractBDVPanel extends JPanel {
+public abstract class AbstractBDVPanel extends AbstractProgressPanel {
 
 	protected BdvHandlePanel bdv;
 	private WorkflowFrame parent;
@@ -24,7 +24,8 @@ public abstract class AbstractBDVPanel extends JPanel {
 		setLayout(new MigLayout("fill"));
 		JLabel titleLabel = new JLabel(title);
 		titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-		add(titleLabel, "aligny bottom");
+		add(titleLabel, "dock south");
+		super.init();
 	}
 
 	public<T extends RealType<T>>  void showInBdv(Img input) {

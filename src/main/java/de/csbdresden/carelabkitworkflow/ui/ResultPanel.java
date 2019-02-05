@@ -6,29 +6,26 @@ import net.miginfocom.swing.MigLayout;
 import javax.swing.*;
 import java.awt.*;
 
-public class ResultPanel extends JPanel {
+public class ResultPanel extends AbstractProgressPanel {
 
 	private final OutputStep outputStep;
 	private JLabel result;
-	private Font font = new Font(Font.MONOSPACED, Font.PLAIN, 136);
+	private Font font = new Font(Font.MONOSPACED, Font.PLAIN, 123);
 
 	ResultPanel(final OutputStep outputStep) {
 		this.outputStep = outputStep;
 		setBackground(new Color(255, 246, 49));
-		setLayout(new MigLayout("fill, flowy"));
+		setLayout(new MigLayout("fill"));
 	}
 
 	public void init(String title) {
-		JPanel resultPanel = new JPanel();
-		resultPanel.setBackground(null);
 		result = new JLabel();
 		result.setFont(font);
-		result.setAlignmentX(CENTER_ALIGNMENT);
-		resultPanel.add(result);
-		add(resultPanel, "push, align 50% 50%");
+		add(result, "pos 0.5al 0.5al");
 		JLabel titleLabel = new JLabel(title);
 		titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 		add(titleLabel, "dock south");
+		super.init();
 	}
 
 	public void update() {
@@ -42,4 +39,5 @@ public class ResultPanel extends JPanel {
 	public void reset() {
 		result.setText("");
 	}
+
 }

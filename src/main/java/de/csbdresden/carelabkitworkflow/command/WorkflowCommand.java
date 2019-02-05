@@ -37,7 +37,7 @@ public class WorkflowCommand implements Command, Initializable {
 
         WorkflowFrame frame = new WorkflowFrame(wf);
         context.inject(frame);
-        frame.setPreferredSize( new Dimension( 800, 600 ) );
+        frame.setPreferredSize( new Dimension( 1200, 600 ) );
         frame.pack();
 //        frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
         frame.setVisible(true);
