@@ -1,0 +1,313 @@
+---
+- !mapping
+  action: go to bookmark
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: toggle source visibility 9
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: toggle source visibility 0
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: align XZ plane
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: toggle fused mode
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: set bookmark
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: toggle source visibility 1
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: help
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: toggle grouping
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: toggle source visibility 2
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: toggle source visibility 3
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: toggle interpolation
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: toggle source visibility 4
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: previous timepoint
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: toggle source visibility 5
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: next timepoint
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: set current source 9
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: go to bookmark rotation
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: toggle source visibility 6
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: set current source 1
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: toggle source visibility 7
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: align ZY plane
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: set current source 0
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: toggle manual transformation
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: set current source 3
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: brightness settings
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: toggle source visibility 8
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: set current source 2
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: set current source 5
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: visibility and grouping
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: set current source 4
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: align XY plane
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: crop
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: set current source 7
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: record max projection movie
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: set current source 6
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: save settings
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: record movie
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: set current source 8
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: load settings
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: drag translate
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: rotate left
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: zoom in
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: rotate right
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: zoom out
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: forward z
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: backward z
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: drag rotate fast
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: drag rotate
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: scroll zoom
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: rotate right slow
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: zoom out slow
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: backward z slow
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: forward z slow
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: scroll browse z slow
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: axis x
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: axis y
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: axis z
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: rotate left slow
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: zoom in slow
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: scroll browse z
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: drag rotate slow
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: forward z fast
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: backward z fast
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: zoom out fast
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: rotate right fast
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: zoom in fast
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: rotate left fast
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: scroll browse z fast
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: 2d drag translate
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: 2d scroll zoom
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: 2d drag rotate
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: 2d scroll rotate
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: 2d scroll translate
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: 2d rotate left
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: 2d rotate right
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: 2d zoom in
+  contexts: [bdv]
+  triggers: [not mapped]
+- !mapping
+  action: 2d zoom out
+  contexts: [bdv]
+  triggers: [not mapped]
