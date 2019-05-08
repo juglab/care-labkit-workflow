@@ -1,9 +1,9 @@
 package de.csbdresden.carelabkitworkflow.backend;
 
-import net.imglib2.img.Img;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import net.imglib2.img.Img;
 
 public class InputCache {
 	private Img input;

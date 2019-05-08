@@ -1,10 +1,13 @@
 package de.csbdresden.carelabkitworkflow.ui;
 
+import java.awt.Color;
+import java.awt.Font;
+
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+
 import de.csbdresden.carelabkitworkflow.model.OutputStep;
 import net.miginfocom.swing.MigLayout;
-
-import javax.swing.*;
-import java.awt.*;
 
 public class ResultPanel extends AbstractProgressPanel {
 
@@ -25,7 +28,7 @@ public class ResultPanel extends AbstractProgressPanel {
 		JLabel titleLabel = new JLabel(title);
 		titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 		add(titleLabel, "dock south");
-		super.init();
+		super.initStep();
 	}
 
 	public void update() {

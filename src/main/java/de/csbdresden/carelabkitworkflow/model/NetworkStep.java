@@ -1,12 +1,14 @@
 package de.csbdresden.carelabkitworkflow.model;
 
 import net.imglib2.img.Img;
+import net.imglib2.type.numeric.RealType;
 
-public class NetworkStep extends AbstractWorkflowStep {
-	private Img image;
+public class NetworkStep<T extends RealType< T >> extends AbstractWorkflowImgStep<T> {
+	private Img<T> image;
 	private String modelUrl;
 
-	public Img getImage() {
+	@Override
+	public Img<T> getImg() {
 		return image;
 	}
 

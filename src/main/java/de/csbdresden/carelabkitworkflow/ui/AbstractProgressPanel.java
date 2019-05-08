@@ -1,11 +1,12 @@
 package de.csbdresden.carelabkitworkflow.ui;
 
-import javax.swing.*;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 
 public abstract class AbstractProgressPanel extends JPanel {
 	private JProgressBar progressBar;
 
-	protected void init() {
+	protected void initStep() {
 		progressBar = new JProgressBar();
 		progressBar.setIndeterminate(true);
 		progressBar.setVisible(false);

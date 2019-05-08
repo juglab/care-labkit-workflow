@@ -1,33 +1,73 @@
 package de.csbdresden.carelabkitworkflow.model;
 
-import net.imglib2.img.Img;
+import javax.swing.JTextPane;
 
-public class SegmentationStep extends AbstractWorkflowStep {
-	private Img image;
+import net.imglib2.img.Img;
+import net.imglib2.roi.labeling.ImgLabeling;
+import net.imglib2.type.numeric.IntegerType;
+import net.imglib2.type.numeric.RealType;
+
+public class SegmentationStep< T extends RealType< T >, I extends IntegerType< I > > extends AbstractWorkflowImgStep< T >
+{
+	private Img< T > image;
+
+	private ImgLabeling< String, I > segmentation;
+
 	private float threshold = 0.5f;
+
 	private boolean useLabkit = false; // otherwise threshold
 
-	public Img getImage() {
+	private JTextPane infoTextPanel;
+
+	@Override
+	public Img< T > getImg()
+	{
 		return image;
 	}
 
-	public void setImage(Img image) {
+	public ImgLabeling< String, I > getSegmentation()
+	{
+		return segmentation;
+	}
+
+	public void setImage( Img< T > image )
+	{
 		this.image = image;
 	}
 
-	public float getThreshold() {
+	public void setSegmentation( ImgLabeling< String, I > seg )
+	{
+		this.segmentation = seg;
+	}
+
+	public float getThreshold()
+	{
 		return threshold;
 	}
 
-	public void setThreshold(float threshold) {
+	public synchronized void setThreshold( float threshold )
+	{
 		this.threshold = threshold;
+		updateInfoText();
 	}
 
-	public boolean isUseLabkit() {
+	public synchronized void updateInfoText()
+	{
+		infoTextPanel.setText( java.text.MessageFormat.format( getCurrentInfoText(), new String[] { String.valueOf( Math.round( this.threshold * 1000 ) / 1000.0 ) } ) );
+	}
+
+	public boolean isUseLabkit()
+	{
 		return useLabkit;
 	}
 
-	public void setUseLabkit(boolean useLabkit) {
+	public void setUseLabkit( boolean useLabkit )
+	{
 		this.useLabkit = useLabkit;
+	}
+
+	public void setInfoTextPanel( final JTextPane infoTextPanel )
+	{
+		this.infoTextPanel = infoTextPanel;
 	}
 }

@@ -1,5 +1,6 @@
 package de.csbdresden.carelabkitworkflow.model;
 
+
 public class OutputStep extends AbstractWorkflowStep {
 	private int result = -1;
 
