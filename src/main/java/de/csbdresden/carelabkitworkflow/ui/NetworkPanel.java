@@ -3,14 +3,20 @@ package de.csbdresden.carelabkitworkflow.ui;
 import java.awt.Color;
 
 import de.csbdresden.carelabkitworkflow.model.NetworkStep;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
-public class NetworkPanel< T extends RealType< T > > extends AbstractBDVPanel< T >
+public class NetworkPanel< T extends RealType< T > & NativeType< T > > extends AbstractBDVPanel< T >
 {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	private final NetworkStep< T > networkStep;
 
-	NetworkPanel( final NetworkStep< T > networkStep )
+	public NetworkPanel( final NetworkStep< T > networkStep )
 	{
 		this.networkStep = networkStep;
 		setBackground( new Color( 197, 49, 255 ) );
@@ -29,7 +35,7 @@ public class NetworkPanel< T extends RealType< T > > extends AbstractBDVPanel< T
 			infoTextPane.setText( networkStep.getCurrentInfoText() );
 		}
 	}
-	
+
 	@Override
 	protected void initStep()
 	{

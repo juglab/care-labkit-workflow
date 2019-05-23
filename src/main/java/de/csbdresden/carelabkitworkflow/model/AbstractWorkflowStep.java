@@ -11,7 +11,7 @@ public abstract class AbstractWorkflowStep
 		return activated;
 	}
 
-	public void setActivated( boolean activated )
+	public void setActivated( final boolean activated )
 	{
 		this.activated = activated;
 	}
@@ -21,7 +21,7 @@ public abstract class AbstractWorkflowStep
 		return currentId;
 	}
 
-	public void setCurrentId( int id )
+	public void setCurrentId( final int id )
 	{
 		currentId = id;
 	}

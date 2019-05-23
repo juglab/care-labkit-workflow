@@ -4,10 +4,11 @@ import javax.swing.JTextPane;
 
 import net.imglib2.img.Img;
 import net.imglib2.roi.labeling.ImgLabeling;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
 
-public class SegmentationStep< T extends RealType< T >, I extends IntegerType< I > > extends AbstractWorkflowImgStep< T >
+public class SegmentationStep< T extends RealType< T > & NativeType< T >, I extends IntegerType< I > > extends AbstractWorkflowImgStep< T >
 {
 	private Img< T > image;
 
@@ -30,12 +31,12 @@ public class SegmentationStep< T extends RealType< T >, I extends IntegerType< I
 		return segmentation;
 	}
 
-	public void setImage( Img< T > image )
+	public void setImage( final Img< T > image )
 	{
 		this.image = image;
 	}
 
-	public void setSegmentation( ImgLabeling< String, I > seg )
+	public void setSegmentation( final ImgLabeling< String, I > seg )
 	{
 		this.segmentation = seg;
 	}
@@ -45,7 +46,7 @@ public class SegmentationStep< T extends RealType< T >, I extends IntegerType< I
 		return threshold;
 	}
 
-	public synchronized void setThreshold( float threshold )
+	public synchronized void setThreshold( final float threshold )
 	{
 		this.threshold = threshold;
 		updateInfoText();
@@ -61,7 +62,7 @@ public class SegmentationStep< T extends RealType< T >, I extends IntegerType< I
 		return useLabkit;
 	}
 
-	public void setUseLabkit( boolean useLabkit )
+	public void setUseLabkit( final boolean useLabkit )
 	{
 		this.useLabkit = useLabkit;
 	}

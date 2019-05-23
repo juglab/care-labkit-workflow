@@ -26,18 +26,22 @@ import de.csbdresden.carelabkitworkflow.model.AbstractWorkflowImgStep;
 import de.csbdresden.carelabkitworkflow.util.AccumulateProjectorAlphaBlendingARGB;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.util.Pair;
 import net.miginfocom.swing.MigLayout;
 
-public abstract class AbstractBDVPanel< T extends RealType< T > > extends AbstractProgressPanel
+public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T > > extends AbstractProgressPanel
 {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	protected String EMPTY_INFO_TEXT = "No item selected.";
 
 	protected BdvHandlePanel bdv;
-
-	protected WorkflowFrame parent;
 
 	protected Color bgColor;
 
@@ -64,11 +68,10 @@ public abstract class AbstractBDVPanel< T extends RealType< T > > extends Abstra
 
 	};
 
-	public void init( WorkflowFrame parent, String title )
+	public void init( final WorkflowFrame< T, ? extends IntegerType< ? > > parent, final String title )
 	{
-		this.parent = parent;
 		setLayout( new MigLayout( "fillx, insets 10 10 10 10", "[]", "[][]" ) );
-		JLabel titleLabel = new JLabel( title );
+		final JLabel titleLabel = new JLabel( title );
 		titleLabel.setBorder( BorderFactory.createEmptyBorder( 20, 20, 20, 20 ) );
 		add( titleLabel, "dock south" );
 		super.initStep();
@@ -83,7 +86,9 @@ public abstract class AbstractBDVPanel< T extends RealType< T > > extends Abstra
 		}
 		bdv = new BdvHandlePanel( parent, Bdv.options().is2D().inputTriggerConfig( config ).preferredSize( 200, 200 ).accumulateProjectorFactory( myFactory ) );
 		if ( bgColor != null )
+		{
 			bdv.getViewerPanel().setBackground( bgColor );
+		}
 		add( bdv.getViewerPanel(), "push, span, grow, wrap", 0 );
 		infoPanel = new JPanel( new MigLayout( "fillx", "[]", "[]" ) );
 		infoPanel.setBackground( Color.DARK_GRAY );
@@ -92,7 +97,6 @@ public abstract class AbstractBDVPanel< T extends RealType< T > > extends Abstra
 		infoTextPane.setFont( new Font( Font.MONOSPACED, Font.PLAIN, 24 ) );
 		infoTextPane.setBackground( Color.DARK_GRAY );
 		infoTextPane.setForeground( Color.white );
-//		infoText.setAli
 		infoTextPane.setText( EMPTY_INFO_TEXT );
 		infoPanel.add( infoTextPane );
 		add( infoPanel, "grow" );
@@ -100,7 +104,7 @@ public abstract class AbstractBDVPanel< T extends RealType< T > > extends Abstra
 		revalidate();
 	}
 
-	public void showInBdv( AbstractWorkflowImgStep< T > step )
+	public void showInBdv( final AbstractWorkflowImgStep< T > step )
 	{
 		bdv.getBdvHandle().getViewerPanel().removeAllSources();
 		if ( step != null )
@@ -109,8 +113,7 @@ public abstract class AbstractBDVPanel< T extends RealType< T > > extends Abstra
 			if ( step.getImg() != null )
 			{
 				source = BdvFunctions.show( step.getImg(), String.valueOf( step.getCurrentId() ), Bdv.options().addTo( bdv ) );
-				Pair< T, T > minMax = parent.getLowerUpperPerc( step.getImg() );
-				source.setDisplayRange( minMax.getA().getRealFloat(), minMax.getB().getRealFloat() );
+				source.setDisplayRange( step.getLowerPercentile(), step.getUpperPercentile() );
 			}
 		}
 	}

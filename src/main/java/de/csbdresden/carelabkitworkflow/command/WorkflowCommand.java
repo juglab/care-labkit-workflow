@@ -19,9 +19,12 @@ import org.scijava.plugin.Plugin;
 import de.csbdresden.carelabkitworkflow.backend.CARELabkitWorkflow;
 import de.csbdresden.carelabkitworkflow.ui.WorkflowFrame;
 import net.imagej.ImageJ;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.IntegerType;
+import net.imglib2.type.numeric.RealType;
 
 @Plugin( type = Command.class, menuPath = "Plugins>Outreach>CARE Labkit Workflow" )
-public class WorkflowCommand implements Command, Initializable
+public class WorkflowCommand< T extends RealType< T > & NativeType< T >, I extends IntegerType< I >> implements Command, Initializable
 {
 
 	@Parameter
@@ -37,14 +40,13 @@ public class WorkflowCommand implements Command, Initializable
 	@Override
 	public void run()
 	{
-		CARELabkitWorkflow wf = new CARELabkitWorkflow( loadChachedCARE );
+		final CARELabkitWorkflow<T, I> wf = new CARELabkitWorkflow<>( loadChachedCARE );
 		context.inject( wf );
 
-		WorkflowFrame frame = new WorkflowFrame( wf, loadChachedCARE );
+		final WorkflowFrame<T, I> frame = new WorkflowFrame<>( wf );
 		context.inject( frame );
 		frame.setPreferredSize( new Dimension( 1200, 600 ) );
 		frame.pack();
-//        frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 		frame.setVisible( true );
 	}
 

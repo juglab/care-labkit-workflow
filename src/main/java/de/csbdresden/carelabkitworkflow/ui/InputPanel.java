@@ -3,13 +3,20 @@ package de.csbdresden.carelabkitworkflow.ui;
 import java.awt.Color;
 
 import de.csbdresden.carelabkitworkflow.model.InputStep;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 
-public class InputPanel extends AbstractBDVPanel
+public class InputPanel< T extends RealType< T > & NativeType< T > > extends AbstractBDVPanel< T >
 {
 
-	private final InputStep inputStep;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
-	InputPanel( final InputStep inputStep )
+	private final InputStep< T > inputStep;
+
+	public InputPanel( final InputStep< T > inputStep )
 	{
 		this.inputStep = inputStep;
 		bgColor = new Color( 255, 49, 117 );
@@ -27,7 +34,7 @@ public class InputPanel extends AbstractBDVPanel
 		{
 			showInBdv( inputStep );
 			infoTextPane.setText( inputStep.getCurrentInfoText() );
-			
+
 		}
 	}
 
