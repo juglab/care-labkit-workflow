@@ -5,6 +5,7 @@ import java.awt.Color;
 import bdv.util.Bdv;
 import bdv.util.BdvFunctions;
 import bdv.util.BdvStackSource;
+import de.csbdresden.carelabkitworkflow.model.InputStep;
 import de.csbdresden.carelabkitworkflow.model.NetworkStep;
 import de.csbdresden.carelabkitworkflow.model.SegmentationStep;
 import de.csbdresden.carelabkitworkflow.util.ColorTableConverter;
@@ -24,11 +25,11 @@ public class SegmentationPanel< T extends RealType< T >, I extends IntegerType< 
 
 	private final SegmentationStep< T, I > segmentationStep;
 
-	private final NetworkStep< T > inputStep;
+	private final InputStep< T > inputStep;
 
 	private BdvStackSource< T > labelingSource;
 
-	SegmentationPanel( final SegmentationStep< T, I > segmentationStep, final NetworkStep< T > networkStep )
+	SegmentationPanel( final SegmentationStep< T, I > segmentationStep, final InputStep< T > networkStep )
 	{
 		this.segmentationStep = segmentationStep;
 		this.inputStep = networkStep;

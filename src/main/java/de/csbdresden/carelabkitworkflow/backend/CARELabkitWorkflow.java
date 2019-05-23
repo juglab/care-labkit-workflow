@@ -23,10 +23,11 @@ import net.imglib2.roi.labeling.ImgLabeling;
 import net.imglib2.roi.labeling.LabelRegions;
 import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Pair;
 import net.imglib2.util.ValuePair;
 
-public class CARELabkitWorkflow
+public class CARELabkitWorkflow< T extends RealType<T>, I extends IntegerType< I >>
 {
 
 	private static final String PLANARIA_NET_INFO = "CARE network trained on pairs of low- and high-quality images. The low quality images were acquired with a x-times lower exposure time and a y-times lower laser power.";
@@ -101,12 +102,12 @@ public class CARELabkitWorkflow
 		// TODO
 	}
 
-	private < T extends RealType< T >, I extends IntegerType<I> > void runThreshold()
+	private void runThreshold()
 	{
 		if ( getSegmentationInput() != null )
 		{
-			Pair< T, T > minMax = getMinMax( getSegmentationInput() );
-			T threshold = minMax.getB().copy();
+			Pair< T, T > minMax = getLowerUpperPerc( getSegmentationInput() );
+			T threshold = minMax.getB();
 			threshold.sub( minMax.getA() );
 			threshold.mul( segmentationStep.getThreshold() );
 			threshold.add( minMax.getA() );
@@ -267,14 +268,13 @@ public class CARELabkitWorkflow
 			segmentationStep.setThreshold( threshold );
 	}
 
-	public < T extends RealType< T > > Pair< T, T > getMinMax( final Img< T > input )
+	public Pair<T, T> getLowerUpperPerc( final Img< T > input )
 	{
-		return opService.stats().minMax( input );
-	}
-
-	public < T extends RealType< T > > Pair< T, T > getLowerUpperPerc( final Img< T > input )
-	{
-		return new ValuePair<>( opService.stats().percentile( input, 3.0 ), opService.stats().percentile( input, 99.0 ) );
+		final T lp = input.firstElement().createVariable();
+		opService.stats().percentile( lp, input, 3.0 );
+		final T up = input.firstElement().createVariable();
+		opService.stats().percentile( up, input, 99.0 );
+		return new ValuePair<>( lp, up );
 	}
 
 	public InputStep getInputStep()

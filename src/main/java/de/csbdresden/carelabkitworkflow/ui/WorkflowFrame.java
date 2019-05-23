@@ -64,7 +64,7 @@ public class WorkflowFrame extends JFrame
 
 		inputPanel = new InputPanel( wf.getInputStep() );
 		networkPanel = new NetworkPanel( wf.getNetworkStep() );
-		segmentationPanel = new SegmentationPanel( wf.getSegmentationStep(), wf.getNetworkStep() );
+		segmentationPanel = new SegmentationPanel( wf.getSegmentationStep(), wf.getInputStep() );
 		outputPanel = new ResultPanel( wf.getOutputStep() );
 
 		String w = "(25%-25px)";
