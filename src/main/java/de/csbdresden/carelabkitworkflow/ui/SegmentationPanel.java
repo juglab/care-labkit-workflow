@@ -5,6 +5,8 @@ import java.awt.Color;
 import bdv.util.Bdv;
 import bdv.util.BdvFunctions;
 import bdv.util.BdvStackSource;
+import de.csbdresden.carelabkitworkflow.model.AbstractWorkflowImgStep;
+import de.csbdresden.carelabkitworkflow.model.InputStep;
 import de.csbdresden.carelabkitworkflow.model.NetworkStep;
 import de.csbdresden.carelabkitworkflow.model.SegmentationStep;
 import de.csbdresden.carelabkitworkflow.util.ColorTableConverter;
@@ -33,9 +35,12 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 
 	private BdvStackSource< T > labelingSource;
 
-	SegmentationPanel( final SegmentationStep< T, I > segmentationStep, final NetworkStep< T > networkStep )
+	private InputStep< T > inputStep;
+
+	SegmentationPanel( final SegmentationStep< T, I > segmentationStep, final InputStep< T > inputStep, final NetworkStep< T > networkStep )
 	{
 		this.segmentationStep = segmentationStep;
+		this.inputStep = inputStep;
 		this.networkStep = networkStep;
 		setBackground( new Color( 49, 193, 255 ) );
 
@@ -80,14 +85,24 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 					segmentColorTable.fillLut();
 					segmentColorTable.update();
 
-					source = BdvFunctions.show( networkStep.getImg(), String.valueOf( segmentationStep.getCurrentId() ), Bdv.options().addTo( bdv ) );
+					if ( networkStep.isActivated() )
+					{
+						displayInput( networkStep );
+					}
+					else
+					{
+						displayInput( inputStep );
+					}
 					labelingSource = BdvFunctions.show( ( RandomAccessibleInterval< T > ) Converters.convert( labeling, conv, new ARGBType() ), String.valueOf( segmentationStep.getCurrentId() ), Bdv.options().addTo( bdv ) );
-
-					source.setDisplayRange( networkStep.getLowerPercentile(), networkStep.getUpperPercentile() );
 					labelingSource.setDisplayRange( 0, 255 );
 				}
 			}
 		}
+	}
+	
+	private void displayInput(final AbstractWorkflowImgStep< T > step ) {
+		source = BdvFunctions.show( step.getImg(), segmentationStep.getName(), Bdv.options().addTo( bdv ) );
+		source.setDisplayRange( step.getLowerPercentile(), step.getUpperPercentile() );
 	}
 
 }

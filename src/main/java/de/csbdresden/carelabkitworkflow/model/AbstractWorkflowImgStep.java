@@ -9,11 +9,21 @@ public abstract class AbstractWorkflowImgStep< T extends RealType< T > & NativeT
 
 	private String infoText;
 	
+	private String sourceName;
+	
 	private float lp;
 	
 	private float up;
 
 	public abstract Img< T > getImg();
+	
+	public void setName(final String name) {
+		this.sourceName = name;
+	}
+	
+	public String getName() {
+		return this.sourceName;
+	}
 
 	public void setInfo( final String info )
 	{

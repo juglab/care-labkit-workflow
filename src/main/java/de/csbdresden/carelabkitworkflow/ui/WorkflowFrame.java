@@ -63,7 +63,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 
 		inputPanel = new InputPanel<>( wf.getInputStep() );
 		networkPanel = new NetworkPanel< T >( wf.getNetworkStep() );
-		segmentationPanel = new SegmentationPanel< T, I >( wf.getSegmentationStep(), wf.getNetworkStep() );
+		segmentationPanel = new SegmentationPanel< T, I >( wf.getSegmentationStep(), wf.getInputStep(), wf.getNetworkStep() );
 		outputPanel = new ResultPanel( wf.getOutputStep() );
 
 		final String w = "(25%-25px)";
@@ -179,6 +179,10 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 				{
 					wf.getInputStep().setActivated( true );
 					wf.setInput( id );
+					if ( wf.getNetworkStep().isActivated() )
+					{
+						wf.setNetwork( wf.getNetworkStep().getCurrentId() );
+					}
 				}
 				inputPanel.startProgress();
 				inputPanel.update();

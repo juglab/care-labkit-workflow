@@ -136,9 +136,13 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 			return;
 		}
 		if ( segmentationStep.isUseLabkit() )
+		{
 			runLabkit();
+		}
 		else
+		{
 			runThreshold();
+		}
 	}
 
 	public void runNetwork()
@@ -191,10 +195,12 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 			if ( url == "tribolium.tif" )
 			{
 				inputStep.setInfo( "Tribolium information text. Image acquired with microscope xyz, exposure, staining... Some interesting fact is... maybe you want to know" );
+				inputStep.setName( "Tribolium" );
 			}
 			else if ( url == "planaria.tif" )
 			{
 				inputStep.setInfo( "Planaria information text. Image acquired with balbla blup..." );
+				inputStep.setName( "Planaria" );
 			}
 			return;
 		}
@@ -211,10 +217,12 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 				if ( url == "tribolium.tif" )
 				{
 					inputStep.setInfo( "Tribolium information text. Image acquired with microscope xyz, exposure, staining..." );
+					inputStep.setName( "Tribolium" );
 				}
 				else if ( url == "planaria.tif" )
 				{
 					inputStep.setInfo( "Planaria information text. Image acquired with balbla blup..." );
+					inputStep.setName( "Planaria" );
 				}
 				if ( loadChachedCARE )
 				{
@@ -259,13 +267,18 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 		{
 			networkStep.setModelUrl( TRIBOLIUM_NET );
 			networkStep.setInfo( TRIBOLIUM_NET_INFO );
+			networkStep.setName( "Trained on Tribolium" );
+			networkStep.setImage( inputs.get( url ).getDenoised( TRIBOLIUM_NET ) );
 		}
 		if ( id == 1 )
 		{
 			networkStep.setModelUrl( PLANARIA_NET );
 			networkStep.setInfo( PLANARIA_NET_INFO );
+			networkStep.setName( "Trained on Planaria" );
+			networkStep.setImage( inputs.get( url ).getDenoised( PLANARIA_NET ) );
 		}
 		networkStep.setCurrentId( id );
+		setPercentiles( networkStep );
 	}
 
 	public void setSegmentation( final int id )
@@ -273,6 +286,10 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 		segmentationStep.setUseLabkit( id == 1 );
 		segmentationStep.setCurrentId( id );
 		segmentationStep.setInfo( SEGMENTATION_INFO );
+		if ( id == 0 )
+		{
+			segmentationStep.setName( "Manual Threshold" );
+		}
 	}
 
 	public float getThreshold()
