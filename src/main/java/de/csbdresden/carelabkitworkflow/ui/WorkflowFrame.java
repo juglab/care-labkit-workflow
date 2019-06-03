@@ -94,15 +94,32 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 
 		final String keyNetwork1 = "network1";
 		final String keyNetwork2 = "network2";
+		final String keyGaussFilter = "gaussFilter";
 		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_E, 0 ), keyNetwork1 );
 		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_R, 0 ), keyNetwork2 );
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_G, 0 ), keyGaussFilter );
 		actionMap.put( keyNetwork1, new ChangeNetworkAction( keyNetwork1, 0 ) );
 		actionMap.put( keyNetwork2, new ChangeNetworkAction( keyNetwork2, 1 ) );
+		actionMap.put( keyGaussFilter, new ChangeNetworkAction( keyGaussFilter, 2 ) );
+		
+		final String keySigmaDown = "sigmaDown";
+		final String keySigmaUp = "sigmaUp";
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_N, 0 ), keySigmaDown );
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_M, 0 ), keySigmaUp );
+		actionMap.put( keySigmaDown, new ChangeSigmaAction( keySigmaDown, -1.0f ) );
+		actionMap.put( keySigmaUp, new ChangeSigmaAction( keySigmaUp, 1.0f ) );
 
-		final String keySegmentation1 = "segmentation1";
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_Z, 0 ), keySegmentation1 );
-		actionMap.put( keySegmentation1, new ChangeSegmentationAction( keySegmentation1, 0 ) );
+//		final String keySegmentation1 = "segmentation1";
+//		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_Z, 0 ), keySegmentation1 );
+//		actionMap.put( keySegmentation1, new ChangeSegmentationAction( keySegmentation1, 0 ) );
 
+		final String keyThresholdManual = "manualThreshold";
+		final String keyThresholdOtsu = "otsuThreshold";
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_Z, 0 ), keyThresholdManual );
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_X, 0 ), keyThresholdOtsu );
+		actionMap.put( keyThresholdManual, new ChangeSegmentationAction( keyThresholdManual, 0 ) );
+		actionMap.put( keyThresholdOtsu, new ChangeSegmentationAction( keyThresholdOtsu, 1 ) );
+		
 		final String keyThresholdDown = "thresholdDown";
 		final String keyThresholdUp = "thresholdUp";
 		inputMap.put( KeyStroke.getKeyStroke( "released LEFT" ), keyThresholdDown );
@@ -181,14 +198,14 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 					wf.setInput( id );
 					if ( wf.getNetworkStep().isActivated() )
 					{
-						wf.setNetwork( wf.getNetworkStep().getCurrentId() );
+						wf.setDenoisingMethod( wf.getNetworkStep().getCurrentId() );
 					}
 				}
 				inputPanel.startProgress();
 				inputPanel.update();
 				inputPanel.endProgress();
 				networkPanel.startProgress();
-				wf.runNetwork();
+				wf.runDenoising();
 				networkPanel.update();
 				networkPanel.endProgress();
 				segmentationPanel.startProgress();
@@ -232,10 +249,10 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 				else
 				{
 					wf.getNetworkStep().setActivated( true );
-					wf.setNetwork( id );
+					wf.setDenoisingMethod( id );
 				}
 				networkPanel.startProgress();
-				wf.runNetwork();
+				wf.runDenoising();
 				networkPanel.update();
 				networkPanel.endProgress();
 				segmentationPanel.startProgress();
@@ -281,6 +298,38 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 					wf.getSegmentationStep().setActivated( true );
 					wf.setSegmentation( id );
 				}
+				segmentationPanel.startProgress();
+				wf.runSegmentation();
+				segmentationPanel.update();
+				segmentationPanel.endProgress();
+				outputPanel.startProgress();
+				wf.calculateOutput();
+				outputPanel.update();
+				outputPanel.endProgress();
+			} ).start();
+		}
+	}
+	
+	private class ChangeSigmaAction extends AbstractAction 
+	{
+		
+		private final float change;
+		
+		public ChangeSigmaAction( final String actionCommand, final float change ) {
+			this.change = change;
+			putValue( ACTION_COMMAND_KEY, actionCommand );
+		}
+
+		@Override
+		public void actionPerformed( final ActionEvent actionEvt )
+		{
+			System.out.println( actionEvt.getActionCommand() + " pressed " + change );
+			new Thread( () ->  {
+				networkPanel.startProgress();
+				wf.setGaussSigma( wf.getGaussSigma() + change );
+				wf.runDenoising();
+				networkPanel.update();
+				networkPanel.endProgress();
 				segmentationPanel.startProgress();
 				wf.runSegmentation();
 				segmentationPanel.update();

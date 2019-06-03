@@ -7,7 +7,7 @@ import bdv.util.BdvFunctions;
 import bdv.util.BdvStackSource;
 import de.csbdresden.carelabkitworkflow.model.AbstractWorkflowImgStep;
 import de.csbdresden.carelabkitworkflow.model.InputStep;
-import de.csbdresden.carelabkitworkflow.model.NetworkStep;
+import de.csbdresden.carelabkitworkflow.model.DenoisingStep;
 import de.csbdresden.carelabkitworkflow.model.SegmentationStep;
 import de.csbdresden.carelabkitworkflow.util.ColorTableConverter;
 import de.csbdresden.carelabkitworkflow.util.RandomColorTable;
@@ -31,13 +31,13 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 
 	private final SegmentationStep< T, I > segmentationStep;
 
-	private final NetworkStep< T > networkStep;
+	private final DenoisingStep< T > networkStep;
 
 	private BdvStackSource< T > labelingSource;
 
 	private InputStep< T > inputStep;
 
-	SegmentationPanel( final SegmentationStep< T, I > segmentationStep, final InputStep< T > inputStep, final NetworkStep< T > networkStep )
+	SegmentationPanel( final SegmentationStep< T, I > segmentationStep, final InputStep< T > inputStep, final DenoisingStep< T > networkStep )
 	{
 		this.segmentationStep = segmentationStep;
 		this.inputStep = inputStep;

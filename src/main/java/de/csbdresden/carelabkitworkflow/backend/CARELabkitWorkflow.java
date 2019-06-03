@@ -12,17 +12,19 @@ import org.scijava.plugin.Parameter;
 
 import de.csbdresden.carelabkitworkflow.model.AbstractWorkflowImgStep;
 import de.csbdresden.carelabkitworkflow.model.InputStep;
-import de.csbdresden.carelabkitworkflow.model.NetworkStep;
+import de.csbdresden.carelabkitworkflow.model.DenoisingStep;
 import de.csbdresden.carelabkitworkflow.model.OutputStep;
 import de.csbdresden.carelabkitworkflow.model.SegmentationStep;
 import de.csbdresden.csbdeep.commands.GenericNetwork;
 import net.imagej.ops.OpService;
+import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.labeling.ConnectedComponents.StructuringElement;
 import net.imglib2.img.Img;
 import net.imglib2.roi.labeling.ImgLabeling;
 import net.imglib2.roi.labeling.LabelRegions;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Pair;
@@ -43,6 +45,8 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 	private static final String SEGMENTATION_INFO = "A straight forward way to obtain a segmentation, i. e. detection of individual cells, is to threshold the image. This means all regions with brightness over a given threshold value are considered foreground and all values below are considered background. \n"
 			+ "Current threshold: {0}";
 
+	private static final String GAUSS_FILTER = "Gauss_Filter";
+
 	@Parameter
 	private IOService ioService;
 
@@ -56,7 +60,7 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 
 	private final InputStep< T > inputStep;
 
-	private final NetworkStep< T > networkStep;
+	private final DenoisingStep< T > denoisingStep;
 
 	private final SegmentationStep< T, I > segmentationStep;
 
@@ -70,7 +74,7 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 	{
 		this.loadChachedCARE = loadChachedCARE;
 		inputStep = new InputStep<>();
-		networkStep = new NetworkStep<>();
+		denoisingStep = new DenoisingStep<>();
 		segmentationStep = new SegmentationStep<>();
 		outputStep = new OutputStep();
 		outputStep.setActivated( true );
@@ -78,7 +82,7 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 
 	public void run()
 	{
-		runNetwork();
+		runDenoising();
 		runSegmentation();
 		calculateOutput();
 	}
@@ -103,16 +107,29 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 		// TODO
 	}
 
-	private void runThreshold()
+	private void runManualThreshold()
 	{
 		if ( getSegmentationInput() != null )
 		{
+			System.out.println( "Manual" );
 			final Pair< T, T > minMax = getMinMax( getSegmentationInput() );
 			final T threshold = minMax.getB();
 			threshold.sub( minMax.getA() );
 			threshold.mul( segmentationStep.getThreshold() );
 			threshold.add( minMax.getA() );
 			segmentationStep.setImage( ( Img< T > ) opService.threshold().apply( Views.iterable( getSegmentationInput() ), threshold ) );
+			segmentationStep.setSegmentation( ( ImgLabeling< String, I > ) opService.labeling().cca( ( RandomAccessibleInterval< IntegerType > ) segmentationStep.getImg(), StructuringElement.FOUR_CONNECTED ) );
+			setPercentiles( segmentationStep );
+		}
+	}
+	
+	private void runOtsuThreshold() 
+	{
+		if ( getSegmentationInput() != null ) 
+		{
+			System.out.println( "Otsu" );
+			final IterableInterval< BitType > thresholded = opService.threshold().otsu( Views.iterable( getSegmentationInput() ) );
+			segmentationStep.setImage( ( Img< T > ) thresholded );
 			segmentationStep.setSegmentation( ( ImgLabeling< String, I > ) opService.labeling().cca( ( RandomAccessibleInterval< IntegerType > ) segmentationStep.getImg(), StructuringElement.FOUR_CONNECTED ) );
 			setPercentiles( segmentationStep );
 		}
@@ -125,7 +142,7 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 
 	private Img< T > getSegmentationInput()
 	{
-		return networkStep.isActivated() ? networkStep.getImg() : inputStep.getImg();
+		return denoisingStep.isActivated() ? denoisingStep.getImg() : inputStep.getImg();
 	}
 
 	public void runSegmentation()
@@ -139,34 +156,46 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 		{
 			runLabkit();
 		}
-		else
+		else if ( segmentationStep.getCurrentId() == 0 )
 		{
-			runThreshold();
+			runManualThreshold();
+		} else if ( segmentationStep.getCurrentId() == 1 )
+		{
+			runOtsuThreshold();
 		}
 	}
 
-	public void runNetwork()
+	public void runDenoising()
 	{
-		if ( !networkStep.isActivated() || inputStep.getImg() == null || !inputStep.isActivated() )
+		if ( !denoisingStep.isActivated() || inputStep.getImg() == null || !inputStep.isActivated() )
 		{
-			networkStep.setImage( null );
+			denoisingStep.setImage( null );
 			return;
 		}
-		if ( networkStep.getModelUrl() == null )
+		if ( denoisingStep.getModelUrl() == null )
 			return;
-		if ( networkStep.getImg() != null ) { return; }
 		if ( loadChachedCARE )
 		{
-			networkStep.setImage( inputs.get( url ).getDenoised( networkStep.getModelUrl() ) );
-			setPercentiles( networkStep );
+			System.out.println( denoisingStep.isGauss() );
+			if ( denoisingStep.isGauss() )
+			{
+				System.out.println( "run gauss" );
+				run_gaussFilter();
+			}
+			else
+			{
+				denoisingStep.setImage( inputs.get( url ).getDenoised( denoisingStep.getModelUrl() ) );
+				setPercentiles( denoisingStep );
+			}
 			return;
 		}
+		if ( denoisingStep.getImg() != null ) { return; }
 		try
 		{
 			final CommandModule module = commandService.run( GenericNetwork.class, false, "input", getInput(),
-					"modelUrl", networkStep.getModelUrl(), "nTiles", 10, "showProgressDialog", false ).get();
-			networkStep.setImage( ( Img< T > ) module.getOutput( "output" ) );
-			setPercentiles( networkStep );
+					"modelUrl", denoisingStep.getModelUrl(), "nTiles", 10, "showProgressDialog", false ).get();
+			denoisingStep.setImage( ( Img< T > ) module.getOutput( "output" ) );
+			setPercentiles( denoisingStep );
 		}
 		catch ( InterruptedException | ExecutionException e )
 		{
@@ -253,7 +282,7 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 
 	public RandomAccessibleInterval< T > getDenoisedInput()
 	{
-		return networkStep.getImg();
+		return denoisingStep.getImg();
 	}
 
 	public RandomAccessibleInterval< T > getSegmentedInput()
@@ -261,34 +290,53 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 		return segmentationStep.getImg();
 	}
 
-	public void setNetwork( final int id )
+	public void setDenoisingMethod( final int id )
 	{
 		if ( id == 0 )
 		{
-			networkStep.setModelUrl( TRIBOLIUM_NET );
-			networkStep.setInfo( TRIBOLIUM_NET_INFO );
-			networkStep.setName( "Trained on Tribolium" );
-			networkStep.setImage( inputs.get( url ).getDenoised( TRIBOLIUM_NET ) );
+			denoisingStep.setModelUrl( TRIBOLIUM_NET );
+			denoisingStep.setInfo( TRIBOLIUM_NET_INFO );
+			denoisingStep.setName( "Trained on Tribolium" );
+			denoisingStep.setImage( inputs.get( url ).getDenoised( TRIBOLIUM_NET ) );
 		}
 		if ( id == 1 )
 		{
-			networkStep.setModelUrl( PLANARIA_NET );
-			networkStep.setInfo( PLANARIA_NET_INFO );
-			networkStep.setName( "Trained on Planaria" );
-			networkStep.setImage( inputs.get( url ).getDenoised( PLANARIA_NET ) );
+			denoisingStep.setModelUrl( PLANARIA_NET );
+			denoisingStep.setInfo( PLANARIA_NET_INFO );
+			denoisingStep.setName( "Trained on Planaria" );
+			denoisingStep.setImage( inputs.get( url ).getDenoised( PLANARIA_NET ) );
 		}
-		networkStep.setCurrentId( id );
-		setPercentiles( networkStep );
+		if ( id == 2 )
+		{
+			denoisingStep.setModelUrl( GAUSS_FILTER );
+			denoisingStep.setInfo( "Gauss Filtering" );
+			denoisingStep.setName( "Gauss Filter" );
+			denoisingStep.useGaussianFilter( true );
+			run_gaussFilter();
+		}
+		denoisingStep.setCurrentId( id );
+		setPercentiles( denoisingStep );
+	}
+
+	private void run_gaussFilter()
+	{
+		final Img< T > input = inputs.get( url ).getInput();
+		final Img< T > out = input.factory().create( input );
+		opService.filter().gauss( out, input, denoisingStep.getGaussSigma() );
+		denoisingStep.setImage( out );
 	}
 
 	public void setSegmentation( final int id )
 	{
-		segmentationStep.setUseLabkit( id == 1 );
+		segmentationStep.setUseLabkit( id == 2 );
 		segmentationStep.setCurrentId( id );
 		segmentationStep.setInfo( SEGMENTATION_INFO );
 		if ( id == 0 )
 		{
 			segmentationStep.setName( "Manual Threshold" );
+		} else if ( id == 1 ) 
+		{
+			segmentationStep.setName( "Otsu Threshold" );
 		}
 	}
 
@@ -318,9 +366,9 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 		return inputStep;
 	}
 
-	public NetworkStep< T > getNetworkStep()
+	public DenoisingStep< T > getNetworkStep()
 	{
-		return networkStep;
+		return denoisingStep;
 	}
 
 	public SegmentationStep< T, I > getSegmentationStep()
@@ -331,5 +379,19 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 	public OutputStep getOutputStep()
 	{
 		return outputStep;
+	}
+
+	public float getGaussSigma()
+	{
+		return denoisingStep.getGaussSigma();
+	}
+
+	public void setGaussSigma( final float sigma )
+	{
+		if ( sigma > 0 )
+		{
+			System.out.println( sigma );
+			denoisingStep.setGaussSigma( sigma );
+		}
 	}
 }
