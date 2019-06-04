@@ -46,9 +46,9 @@ public class ResultPanel extends AbstractProgressPanel
 		showOutput( outputStep.getResult() );
 	}
 
-	private void showOutput( final int output )
+	private void showOutput( final double output )
 	{
-		result.setText( output >= 0 ? String.valueOf( output ) : "?" );
+		result.setText( output >= 0 ? String.valueOf( Math.round( output * 100)/100.0 ) : "?" );
 	}
 
 	public void reset()
