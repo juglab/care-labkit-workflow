@@ -2,16 +2,18 @@ package de.csbdresden.carelabkitworkflow.model;
 
 import javax.swing.JTextPane;
 
-import net.imglib2.img.Img;
+import net.imglib2.IterableInterval;
 import net.imglib2.roi.labeling.ImgLabeling;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
 
-public class SegmentationStep< T extends RealType< T > & NativeType< T >, I extends IntegerType< I > > extends AbstractWorkflowImgStep< T >
+public class SegmentationStep< T extends RealType< T > & NativeType< T >, I extends IntegerType< I >> extends AbstractWorkflowLabelingStep
 {
-	private Img< T > image;
 
+	private IterableInterval< BitType > thresholded;
+	
 	private ImgLabeling< String, I > segmentation;
 
 	private float threshold = 0.5f;
@@ -20,23 +22,20 @@ public class SegmentationStep< T extends RealType< T > & NativeType< T >, I exte
 
 	private JTextPane infoTextPanel;
 
-	@Override
-	public Img< T > getImg()
-	{
-		return image;
-	}
-
-	public ImgLabeling< String, I > getSegmentation()
+	public ImgLabeling< String, I > getLabeling()
 	{
 		return segmentation;
 	}
-
-	public void setImage( final Img< T > image )
-	{
-		this.image = image;
+	
+	public void setThresholdedImg( final IterableInterval< BitType > thresholded  ) {
+		this.thresholded = thresholded;
 	}
 
-	public void setSegmentation( final ImgLabeling< String, I > seg )
+	public IterableInterval< BitType > getThresholdedImg() {
+		return this.thresholded;
+	}
+	
+	public void setLabeling( final ImgLabeling< String, I > seg )
 	{
 		this.segmentation = seg;
 	}

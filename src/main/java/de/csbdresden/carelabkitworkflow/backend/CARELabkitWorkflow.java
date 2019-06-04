@@ -11,8 +11,8 @@ import org.scijava.io.IOService;
 import org.scijava.plugin.Parameter;
 
 import de.csbdresden.carelabkitworkflow.model.AbstractWorkflowImgStep;
-import de.csbdresden.carelabkitworkflow.model.InputStep;
 import de.csbdresden.carelabkitworkflow.model.DenoisingStep;
+import de.csbdresden.carelabkitworkflow.model.InputStep;
 import de.csbdresden.carelabkitworkflow.model.OutputStep;
 import de.csbdresden.carelabkitworkflow.model.SegmentationStep;
 import de.csbdresden.csbdeep.commands.GenericNetwork;
@@ -31,7 +31,7 @@ import net.imglib2.util.Pair;
 import net.imglib2.util.ValuePair;
 import net.imglib2.view.Views;
 
-public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I extends IntegerType< I > >
+public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I extends IntegerType< I > >
 {
 
 	private static final String PLANARIA_NET_INFO = "CARE network trained on pairs of low- and high-quality images. The low quality images were acquired with a x-times lower exposure time and a y-times lower laser power.";
@@ -89,14 +89,13 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 
 	public void calculateOutput()
 	{
-		final RandomAccessibleInterval< T > segmentedInput = segmentationStep.getImg();
-		if ( !outputStep.isActivated() || segmentedInput == null )
+		if ( !outputStep.isActivated() || segmentationStep.getLabeling() == null )
 		{
 			outputStep.setResult( -1 );
 			return;
 		} ;
 
-		final LabelRegions< String > regions = new LabelRegions< String >( segmentationStep.getSegmentation() );
+		final LabelRegions< String > regions = new LabelRegions< String >( segmentationStep.getLabeling() );
 		outputStep.setResult( regions.getExistingLabels().size() );
 		System.out.println(
 				"Threshold: " + segmentationStep.getThreshold() + ", calculated output " + outputStep.getResult() );
@@ -111,27 +110,22 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 	{
 		if ( getSegmentationInput() != null )
 		{
-			System.out.println( "Manual" );
 			final Pair< T, T > minMax = getMinMax( getSegmentationInput() );
 			final T threshold = minMax.getB();
 			threshold.sub( minMax.getA() );
 			threshold.mul( segmentationStep.getThreshold() );
 			threshold.add( minMax.getA() );
-			segmentationStep.setImage( ( Img< T > ) opService.threshold().apply( Views.iterable( getSegmentationInput() ), threshold ) );
-			segmentationStep.setSegmentation( ( ImgLabeling< String, I > ) opService.labeling().cca( ( RandomAccessibleInterval< IntegerType > ) segmentationStep.getImg(), StructuringElement.FOUR_CONNECTED ) );
-			setPercentiles( segmentationStep );
+			final IterableInterval< BitType > thresholded = opService.threshold().apply( Views.iterable( getSegmentationInput() ), threshold );
+			segmentationStep.setLabeling( ( ImgLabeling< String, I > ) opService.labeling().cca( (RandomAccessibleInterval< IntegerType >)thresholded, StructuringElement.FOUR_CONNECTED ) );
 		}
 	}
-	
-	private void runOtsuThreshold() 
+
+	private void runOtsuThreshold()
 	{
-		if ( getSegmentationInput() != null ) 
+		if ( getSegmentationInput() != null )
 		{
-			System.out.println( "Otsu" );
 			final IterableInterval< BitType > thresholded = opService.threshold().otsu( Views.iterable( getSegmentationInput() ) );
-			segmentationStep.setImage( ( Img< T > ) thresholded );
-			segmentationStep.setSegmentation( ( ImgLabeling< String, I > ) opService.labeling().cca( ( RandomAccessibleInterval< IntegerType > ) segmentationStep.getImg(), StructuringElement.FOUR_CONNECTED ) );
-			setPercentiles( segmentationStep );
+			segmentationStep.setLabeling( opService.labeling().cca( ( RandomAccessibleInterval< IntegerType > ) thresholded, StructuringElement.FOUR_CONNECTED ) );
 		}
 	}
 
@@ -149,7 +143,6 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 	{
 		if ( !segmentationStep.isActivated() || getSegmentationInput() == null || !inputStep.isActivated() )
 		{
-			segmentationStep.setImage( null );
 			return;
 		}
 		if ( segmentationStep.isUseLabkit() )
@@ -159,7 +152,8 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 		else if ( segmentationStep.getCurrentId() == 0 )
 		{
 			runManualThreshold();
-		} else if ( segmentationStep.getCurrentId() == 1 )
+		}
+		else if ( segmentationStep.getCurrentId() == 1 )
 		{
 			runOtsuThreshold();
 		}
@@ -185,7 +179,7 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 			else
 			{
 				denoisingStep.setImage( inputs.get( url ).getDenoised( denoisingStep.getModelUrl() ) );
-				setPercentiles( denoisingStep );
+				setPercentiles( denoisingStep, denoisingStep.getImg() );
 			}
 			return;
 		}
@@ -195,7 +189,7 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 			final CommandModule module = commandService.run( GenericNetwork.class, false, "input", getInput(),
 					"modelUrl", denoisingStep.getModelUrl(), "nTiles", 10, "showProgressDialog", false ).get();
 			denoisingStep.setImage( ( Img< T > ) module.getOutput( "output" ) );
-			setPercentiles( denoisingStep );
+			setPercentiles( denoisingStep, denoisingStep.getImg() );
 		}
 		catch ( InterruptedException | ExecutionException e )
 		{
@@ -220,7 +214,7 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 		if ( inputs.containsKey( url ) )
 		{
 			inputStep.setImage( inputs.get( url ).getInput() );
-			setPercentiles( inputStep );
+			setPercentiles( inputStep, inputStep.getImg() );
 			if ( url == "tribolium.tif" )
 			{
 				inputStep.setInfo( "Tribolium information text. Image acquired with microscope xyz, exposure, staining... Some interesting fact is... maybe you want to know" );
@@ -241,7 +235,7 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 				final InputCache< T > input = new InputCache<>( inputimg );
 				inputs.put( url, input );
 				inputStep.setImage( input.getInput() );
-				setPercentiles( inputStep );
+				setPercentiles( inputStep, inputStep.getImg() );
 				computeInputPercentiles( inputStep.getImg() );
 				if ( url == "tribolium.tif" )
 				{
@@ -268,9 +262,9 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 		}
 	}
 
-	private void setPercentiles( final AbstractWorkflowImgStep< T > step )
+	private void setPercentiles( final AbstractWorkflowImgStep< T > step, final IterableInterval< T > img)
 	{
-		final ValuePair< T, T > percentiles = computeInputPercentiles( step.getImg() );
+		final ValuePair< T, T > percentiles = computeInputPercentiles( img );
 		step.setLowerPercentile( percentiles.getA().getRealFloat() );
 		step.setUpperPercentile( percentiles.getB().getRealFloat() );
 	}
@@ -283,11 +277,6 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 	public RandomAccessibleInterval< T > getDenoisedInput()
 	{
 		return denoisingStep.getImg();
-	}
-
-	public RandomAccessibleInterval< T > getSegmentedInput()
-	{
-		return segmentationStep.getImg();
 	}
 
 	public void setDenoisingMethod( final int id )
@@ -315,7 +304,7 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 			run_gaussFilter();
 		}
 		denoisingStep.setCurrentId( id );
-		setPercentiles( denoisingStep );
+		setPercentiles( denoisingStep, denoisingStep.getImg() );
 	}
 
 	private void run_gaussFilter()
@@ -334,7 +323,8 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 		if ( id == 0 )
 		{
 			segmentationStep.setName( "Manual Threshold" );
-		} else if ( id == 1 ) 
+		}
+		else if ( id == 1 )
 		{
 			segmentationStep.setName( "Otsu Threshold" );
 		}
@@ -351,13 +341,13 @@ public class CARELabkitWorkflow< T extends RealType< T > & NativeType< T >, I ex
 			segmentationStep.setThreshold( threshold );
 	}
 
-	private ValuePair< T, T > computeInputPercentiles( final RandomAccessibleInterval< T > input )
+	private ValuePair< T, T > computeInputPercentiles( final IterableInterval< T > iterableInterval )
 	{
 
-		final T lp = input.randomAccess().get().createVariable();
-		opService.stats().percentile( lp, Views.iterable( input ), 3.0 );
-		final T up = input.randomAccess().get().createVariable();
-		opService.stats().percentile( up, Views.iterable( input ), 99.0 );
+		final T lp = iterableInterval.firstElement().createVariable();
+		opService.stats().percentile( lp, iterableInterval, 3.0 );
+		final T up = iterableInterval.firstElement().createVariable();
+		opService.stats().percentile( up, iterableInterval, 99.0 );
 		return new ValuePair< T, T >( lp, up );
 	}
 

@@ -33,7 +33,7 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 
 	private final DenoisingStep< T > networkStep;
 
-	private BdvStackSource< T > labelingSource;
+	private BdvStackSource< ARGBType > labelingSource;
 
 	private InputStep< T > inputStep;
 
@@ -65,18 +65,17 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 		}
 	}
 
-	@SuppressWarnings( "unchecked" )
 	private void showSegmentation()
 	{
 		bdv.getBdvHandle().getViewerPanel().removeAllSources();
 		if ( segmentationStep != null )
 		{
 
-			if ( segmentationStep.getImg() != null )
+			if ( segmentationStep.getLabeling() != null )
 			{
 				synchronized ( segmentationStep )
 				{
-					RandomAccessibleInterval< LabelingType< String > > labeling = segmentationStep.getSegmentation();
+					RandomAccessibleInterval< LabelingType< String > > labeling = segmentationStep.getLabeling();
 
 					final LabelingMapping< String > mapping = Util.getTypeFromInterval( labeling ).getMapping();
 					final ColorTableConverter< String > conv = new ColorTableConverter< String >( mapping );
@@ -93,7 +92,7 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 					{
 						displayInput( inputStep );
 					}
-					labelingSource = BdvFunctions.show( ( RandomAccessibleInterval< T > ) Converters.convert( labeling, conv, new ARGBType() ), String.valueOf( segmentationStep.getCurrentId() ), Bdv.options().addTo( bdv ) );
+					labelingSource = ( BdvStackSource< ARGBType > ) BdvFunctions.show( Converters.convert( labeling, conv, new ARGBType() ), String.valueOf( segmentationStep.getCurrentId() ), Bdv.options().addTo( bdv ) );
 					labelingSource.setDisplayRange( 0, 255 );
 				}
 			}
@@ -101,7 +100,7 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 	}
 	
 	private void displayInput(final AbstractWorkflowImgStep< T > step ) {
-		source = BdvFunctions.show( step.getImg(), segmentationStep.getName(), Bdv.options().addTo( bdv ) );
+		source = BdvFunctions.show( ( RandomAccessibleInterval< T > ) step.getImg(), segmentationStep.getName(), Bdv.options().addTo( bdv ) );
 		source.setDisplayRange( step.getLowerPercentile(), step.getUpperPercentile() );
 	}
 

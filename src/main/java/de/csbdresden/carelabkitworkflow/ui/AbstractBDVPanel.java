@@ -112,7 +112,7 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 
 			if ( step.getImg() != null )
 			{
-				source = BdvFunctions.show( step.getImg(), step.getName(), Bdv.options().addTo( bdv ) );
+				source = BdvFunctions.show( ( RandomAccessibleInterval< T > ) step.getImg(), step.getName(), Bdv.options().addTo( bdv ) );
 				source.setDisplayRange( step.getLowerPercentile(), step.getUpperPercentile() );
 			}
 		}
