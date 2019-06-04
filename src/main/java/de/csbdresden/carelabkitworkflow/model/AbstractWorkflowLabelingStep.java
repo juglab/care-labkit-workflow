@@ -5,7 +5,7 @@ import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
-public abstract class AbstractWorkflowImgStep< T extends RealType< T > & NativeType< T > > extends AbstractWorkflowStep
+public abstract class AbstractWorkflowLabelingStep< T extends RealType< T > & NativeType< T > > extends AbstractWorkflowStep
 {
 
 	private String infoText;
@@ -16,7 +16,7 @@ public abstract class AbstractWorkflowImgStep< T extends RealType< T > & NativeT
 	
 	private float up;
 
-	public abstract IterableInterval< T > getImg();
+	public abstract IterableInterval< T > getLabeling();
 	
 	public void setName(final String name) {
 		this.sourceName = name;
