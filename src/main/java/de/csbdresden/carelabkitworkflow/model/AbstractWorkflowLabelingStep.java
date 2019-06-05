@@ -1,7 +1,6 @@
 package de.csbdresden.carelabkitworkflow.model;
 
 import net.imglib2.IterableInterval;
-import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 

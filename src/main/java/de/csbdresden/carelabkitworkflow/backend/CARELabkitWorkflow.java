@@ -110,7 +110,8 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		{
 			outputStep.setResult( -1 );
 			return;
-		} ;
+		}
+
 		final SEG_Score seg = new SEG_Score( opService.log() );
 		double score = seg.calculate( inputStep.getGT(), ( RandomAccessibleInterval< UnsignedShortType > ) Converters.convert( segmentationStep.getLabeling().getIndexImg(), conv, new UnsignedShortType() ) );
 
@@ -134,7 +135,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			threshold.mul( segmentationStep.getThreshold() );
 			threshold.add( minMax.getA() );
 			final IterableInterval< BitType > thresholded = opService.threshold().apply( Views.iterable( getSegmentationInput() ), threshold );
-			segmentationStep.setLabeling( ( ImgLabeling< String, I > ) opService.labeling().cca( ( RandomAccessibleInterval< IntegerType > ) thresholded, StructuringElement.FOUR_CONNECTED ) );
+			segmentationStep.setLabeling( opService.labeling().cca( ( RandomAccessibleInterval< IntegerType > ) thresholded, StructuringElement.FOUR_CONNECTED ) );
 		}
 	}
 
@@ -303,14 +304,18 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			denoisingStep.setModelUrl( TRIBOLIUM_NET );
 			denoisingStep.setInfo( TRIBOLIUM_NET_INFO );
 			denoisingStep.setName( "Trained on Tribolium" );
-			denoisingStep.setImage( inputs.get( url ).getDenoised( TRIBOLIUM_NET ) );
+			if(url != null) {
+				denoisingStep.setImage( inputs.get( url ).getDenoised( TRIBOLIUM_NET ) );
+			}
 			denoisingStep.useGaussianFilter( false );
 		}else if ( id == 1 )
 		{
 			denoisingStep.setModelUrl( PLANARIA_NET );
 			denoisingStep.setInfo( PLANARIA_NET_INFO );
 			denoisingStep.setName( "Trained on Planaria" );
-			denoisingStep.setImage( inputs.get( url ).getDenoised( PLANARIA_NET ) );
+			if(url != null) {
+				denoisingStep.setImage( inputs.get( url ).getDenoised( PLANARIA_NET ) );
+			}
 			denoisingStep.useGaussianFilter( false );
 		}else if ( id == 2 )
 		{
@@ -321,11 +326,14 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			run_gaussFilter();
 		}
 		denoisingStep.setCurrentId( id );
-		setPercentiles( denoisingStep, denoisingStep.getImg() );
+		if(denoisingStep.getImg() != null) {
+			setPercentiles( denoisingStep, denoisingStep.getImg() );
+		}
 	}
 
 	private void run_gaussFilter()
 	{
+		if(url == null) return;
 		final Img< T > input = inputs.get( url ).getInput();
 		final Img< T > out = input.factory().create( input );
 		opService.filter().gauss( out, input, denoisingStep.getGaussSigma() );
