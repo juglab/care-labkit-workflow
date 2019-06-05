@@ -76,7 +76,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 
 	private final Converter< I, UnsignedShortType > conv;
 	
-	private final SEG_Score seg;
+	private SEG_Score seg;
 	
 	public CARELabkitWorkflow( final boolean loadChachedCARE )
 	{
@@ -95,8 +95,6 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 				output.set( input.getInteger() );
 			}
 		};
-
-		seg = new SEG_Score( opService.log() );
 	}
 
 	public void run()
@@ -114,6 +112,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			return;
 		} ;
 
+		seg = new SEG_Score( opService.log() );
 		double score = seg.calculate( inputStep.getGT(), ( RandomAccessibleInterval< UnsignedShortType > ) Converters.convert( segmentationStep.getLabeling().getIndexImg(), conv, new UnsignedShortType() ) );
 
 		outputStep.setResult( score );

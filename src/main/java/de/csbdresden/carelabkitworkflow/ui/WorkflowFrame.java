@@ -110,17 +110,17 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		actionMap.put( keySigmaUp, new ChangeSigmaAction( keySigmaUp, 1.0f ) );
 
 		final String keySigmaValue = "sigmaValue";
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_EXCLAMATION_MARK, 0 ), keySigmaValue + "0");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_AT, 0 ), keySigmaValue + "1");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_PERIOD, 0 ), keySigmaValue + "2");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_DOLLAR, 0 ), keySigmaValue + "3");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_COMMA, 0 ), keySigmaValue + "4");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_AMPERSAND, 0 ), keySigmaValue + "5");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_ASTERISK, 0 ), keySigmaValue + "6");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_LEFT_PARENTHESIS, 0 ), keySigmaValue + "7");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_RIGHT_PARENTHESIS, 0 ), keySigmaValue + "8");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_UNDERSCORE, 0 ), keySigmaValue + "9");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_MINUS, 0 ), keySigmaValue + "10");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_T, 0 ), keySigmaValue + "0");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_A, 0 ), keySigmaValue + "1");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_S, 0 ), keySigmaValue + "2");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_D, 0 ), keySigmaValue + "3");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_H, 0 ), keySigmaValue + "4");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_J, 0 ), keySigmaValue + "5");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_K, 0 ), keySigmaValue + "6");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_L, 0 ), keySigmaValue + "7");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_MINUS, 0 ), keySigmaValue + "8");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_PERIOD, 0 ), keySigmaValue + "9");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_COMMA, 0 ), keySigmaValue + "10");
 
 		actionMap.put( keySigmaValue+"0", new SetSigmaAction( keySigmaValue+"0", 0) );
 		actionMap.put( keySigmaValue+"1", new SetSigmaAction( keySigmaValue+"1", 1) );
