@@ -29,6 +29,9 @@ public class WorkflowCommand< T extends RealType< T > & NativeType< T >, I exten
 
 	@Parameter
 	private boolean loadChachedCARE = true;
+	
+	@Parameter
+	private String port = "/dev/pts/7";
 
 	@Parameter
 	private Context context;
@@ -43,7 +46,7 @@ public class WorkflowCommand< T extends RealType< T > & NativeType< T >, I exten
 		final CARELabkitWorkflow<T, I> wf = new CARELabkitWorkflow<>( loadChachedCARE );
 		context.inject( wf );
 
-		final WorkflowFrame<T, I> frame = new WorkflowFrame<>( wf );
+		final WorkflowFrame<T, I> frame = new WorkflowFrame<>( wf, port );
 		context.inject( frame );
 		frame.setPreferredSize( new Dimension( 1200, 600 ) );
 		frame.pack();

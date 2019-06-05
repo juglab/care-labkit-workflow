@@ -63,7 +63,7 @@ public class NetworkPanel< T extends RealType< T > & NativeType< T > > extends A
 	{
 		if ( networkStep.isActivated() && networkStep.isGauss() )
 		{
-			numberLabel.setText( "   Sigma = " + String.valueOf( Math.round( networkStep.getGaussSigma() * 100)/100 ) );
+			numberLabel.setText( "   Sigma = " + String.valueOf( Math.round( networkStep.getGaussSigma() * 100)/100.0 ) );
 		} else {
 			numberLabel.setText( "" );
 		}

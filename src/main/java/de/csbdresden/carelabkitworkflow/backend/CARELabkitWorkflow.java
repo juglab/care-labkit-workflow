@@ -1,6 +1,9 @@
 package de.csbdresden.carelabkitworkflow.backend;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -9,6 +12,11 @@ import org.scijava.command.CommandModule;
 import org.scijava.command.CommandService;
 import org.scijava.io.IOService;
 import org.scijava.plugin.Parameter;
+
+import com.fazecast.jSerialComm.SerialPort;
+import com.fazecast.jSerialComm.SerialPortDataListener;
+import com.fazecast.jSerialComm.SerialPortEvent;
+import com.fazecast.jSerialComm.SerialPortMessageListener;
 
 import de.csbdresden.carelabkitworkflow.model.AbstractWorkflowImgStep;
 import de.csbdresden.carelabkitworkflow.model.DenoisingStep;
@@ -96,6 +104,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			}
 		};
 	}
+
 
 	public void run()
 	{
@@ -304,20 +313,24 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			denoisingStep.setModelUrl( TRIBOLIUM_NET );
 			denoisingStep.setInfo( TRIBOLIUM_NET_INFO );
 			denoisingStep.setName( "Trained on Tribolium" );
-			if(url != null) {
+			if ( url != null )
+			{
 				denoisingStep.setImage( inputs.get( url ).getDenoised( TRIBOLIUM_NET ) );
 			}
 			denoisingStep.useGaussianFilter( false );
-		}else if ( id == 1 )
+		}
+		else if ( id == 1 )
 		{
 			denoisingStep.setModelUrl( PLANARIA_NET );
 			denoisingStep.setInfo( PLANARIA_NET_INFO );
 			denoisingStep.setName( "Trained on Planaria" );
-			if(url != null) {
+			if ( url != null )
+			{
 				denoisingStep.setImage( inputs.get( url ).getDenoised( PLANARIA_NET ) );
 			}
 			denoisingStep.useGaussianFilter( false );
-		}else if ( id == 2 )
+		}
+		else if ( id == 2 )
 		{
 			denoisingStep.setModelUrl( GAUSS_FILTER );
 			denoisingStep.setInfo( "Gauss Filtering" );
@@ -326,14 +339,16 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			run_gaussFilter();
 		}
 		denoisingStep.setCurrentId( id );
-		if(denoisingStep.getImg() != null) {
+		if ( denoisingStep.getImg() != null )
+		{
 			setPercentiles( denoisingStep, denoisingStep.getImg() );
 		}
 	}
 
 	private void run_gaussFilter()
 	{
-		if(url == null) return;
+		if ( url == null )
+			return;
 		final Img< T > input = inputs.get( url ).getInput();
 		final Img< T > out = input.factory().create( input );
 		opService.filter().gauss( out, input, denoisingStep.getGaussSigma() );
@@ -419,8 +434,9 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 	{
 		return !updated;
 	}
-	
-	public synchronized void updated() {
+
+	public synchronized void updated()
+	{
 		updated = true;
 	}
 }
