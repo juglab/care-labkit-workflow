@@ -27,12 +27,10 @@ public class NetworkPanel< T extends RealType< T > & NativeType< T > > extends A
 		if ( !networkStep.isActivated() )
 		{
 			showInBdv( null );
-			infoTextPane.setText( EMPTY_INFO_TEXT );
 		}
 		else
 		{
 			showInBdv( networkStep );
-			infoTextPane.setText( networkStep.getCurrentInfoText() );
 		}
 	}
 

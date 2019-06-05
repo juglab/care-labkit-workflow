@@ -235,7 +235,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		setVisible( true );
 	}
 
-	private void updateOnThresholdChange()
+	private synchronized void updateOnThresholdChange()
 	{
 		if ( wf.needsUpdate() )
 		{
@@ -295,7 +295,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		wf.updated();
 	}
 
-	private void updateOnInputChange()
+	private synchronized void updateOnInputChange()
 	{
 		if ( wf.needsUpdate() )
 		{
