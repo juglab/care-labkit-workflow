@@ -43,4 +43,9 @@ public class InputPanel< T extends RealType< T > & NativeType< T > > extends Abs
 	{
 		// nothing to do
 	}
+
+	public void reset()
+	{
+		bdv.getViewerPanel().removeAllSources();
+	}
 }

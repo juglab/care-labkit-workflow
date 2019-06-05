@@ -41,4 +41,9 @@ public class NetworkPanel< T extends RealType< T > & NativeType< T > > extends A
 	{
 		// nothing to do
 	}
+
+	public void reset()
+	{
+		bdv.getBdvHandle().getViewerPanel().removeAllSources();
+	}
 }

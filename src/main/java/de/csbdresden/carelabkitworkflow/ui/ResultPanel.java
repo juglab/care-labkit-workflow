@@ -48,7 +48,7 @@ public class ResultPanel extends AbstractProgressPanel
 
 	private void showOutput( final double output )
 	{
-		result.setText( output >= 0 ? String.valueOf( Math.round( output * 100)/100.0 ) : "?" );
+		result.setText( output >= 0 ? String.valueOf( Math.round( output * 10000)/100.0 ) + "%" : "?" );
 	}
 
 	public void reset()
