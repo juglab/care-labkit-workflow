@@ -73,8 +73,8 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 
 			if ( segmentationStep.getLabeling() != null )
 			{
-				synchronized ( segmentationStep )
-				{
+//				synchronized ( segmentationStep )
+//				{
 					RandomAccessibleInterval< LabelingType< String > > labeling = segmentationStep.getLabeling();
 
 					final LabelingMapping< String > mapping = Util.getTypeFromInterval( labeling ).getMapping();
@@ -94,7 +94,7 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 					}
 					labelingSource = ( BdvStackSource< ARGBType > ) BdvFunctions.show( Converters.convert( labeling, conv, new ARGBType() ), String.valueOf( segmentationStep.getCurrentId() ), Bdv.options().addTo( bdv ) );
 					labelingSource.setDisplayRange( 0, 255 );
-				}
+//				}
 			}
 		}
 	}

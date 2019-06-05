@@ -15,11 +15,14 @@ import de.csbdresden.carelabkitworkflow.model.DenoisingStep;
 import de.csbdresden.carelabkitworkflow.model.InputStep;
 import de.csbdresden.carelabkitworkflow.model.OutputStep;
 import de.csbdresden.carelabkitworkflow.model.SegmentationStep;
+import de.csbdresden.carelabkitworkflow.util.SEG_Score;
 import de.csbdresden.csbdeep.commands.GenericNetwork;
 import net.imagej.ops.OpService;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.labeling.ConnectedComponents.StructuringElement;
+import net.imglib2.converter.Converter;
+import net.imglib2.converter.Converters;
 import net.imglib2.img.Img;
 import net.imglib2.roi.labeling.ImgLabeling;
 import net.imglib2.roi.labeling.LabelRegions;
@@ -27,6 +30,7 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.Pair;
 import net.imglib2.util.ValuePair;
 import net.imglib2.view.Views;
@@ -70,6 +74,10 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 
 	private String url;
 
+	private final Converter< I, UnsignedShortType > conv;
+	
+	private final SEG_Score seg;
+	
 	public CARELabkitWorkflow( final boolean loadChachedCARE )
 	{
 		this.loadChachedCARE = loadChachedCARE;
@@ -78,6 +86,17 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		segmentationStep = new SegmentationStep<>();
 		outputStep = new OutputStep();
 		outputStep.setActivated( true );
+		conv = new Converter< I, UnsignedShortType >()
+		{
+
+			@Override
+			public void convert( I input, UnsignedShortType output )
+			{
+				output.set( input.getInteger() );
+			}
+		};
+
+		seg = new SEG_Score( opService.log() );
 	}
 
 	public void run()
@@ -95,8 +114,9 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			return;
 		} ;
 
-		final LabelRegions< String > regions = new LabelRegions< String >( segmentationStep.getLabeling() );
-		outputStep.setResult( regions.getExistingLabels().size() );
+		double score = seg.calculate( inputStep.getGT(), ( RandomAccessibleInterval< UnsignedShortType > ) Converters.convert( segmentationStep.getLabeling().getIndexImg(), conv, new UnsignedShortType() ) );
+
+		outputStep.setResult( score );
 		System.out.println(
 				"Threshold: " + segmentationStep.getThreshold() + ", calculated output " + outputStep.getResult() );
 	}
@@ -116,7 +136,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			threshold.mul( segmentationStep.getThreshold() );
 			threshold.add( minMax.getA() );
 			final IterableInterval< BitType > thresholded = opService.threshold().apply( Views.iterable( getSegmentationInput() ), threshold );
-			segmentationStep.setLabeling( ( ImgLabeling< String, I > ) opService.labeling().cca( (RandomAccessibleInterval< IntegerType >)thresholded, StructuringElement.FOUR_CONNECTED ) );
+			segmentationStep.setLabeling( opService.labeling().cca( ( RandomAccessibleInterval< IntegerType > ) thresholded, StructuringElement.FOUR_CONNECTED ) );
 		}
 	}
 
@@ -141,10 +161,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 
 	public void runSegmentation()
 	{
-		if ( !segmentationStep.isActivated() || getSegmentationInput() == null || !inputStep.isActivated() )
-		{
-			return;
-		}
+		if ( !segmentationStep.isActivated() || getSegmentationInput() == null || !inputStep.isActivated() ) { return; }
 		if ( segmentationStep.isUseLabkit() )
 		{
 			runLabkit();
@@ -170,14 +187,15 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			return;
 		if ( loadChachedCARE )
 		{
-			System.out.println( denoisingStep.isGauss() );
 			if ( denoisingStep.isGauss() )
 			{
-				System.out.println( "run gauss" );
+				System.out.println( "gauss" );
 				run_gaussFilter();
+				setPercentiles( denoisingStep, denoisingStep.getImg() );
 			}
 			else
 			{
+				System.out.println( "network" );
 				denoisingStep.setImage( inputs.get( url ).getDenoised( denoisingStep.getModelUrl() ) );
 				setPercentiles( denoisingStep, denoisingStep.getImg() );
 			}
@@ -197,7 +215,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		}
 	}
 
-	public int getOutput()
+	public double getOutput()
 	{
 		return outputStep.getResult();
 	}
@@ -213,7 +231,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		inputStep.setCurrentId( id );
 		if ( inputs.containsKey( url ) )
 		{
-			inputStep.setImage( inputs.get( url ).getInput() );
+			inputStep.setImage( inputs.get( url ).getInput(), inputs.get( url ).getGT() );
 			setPercentiles( inputStep, inputStep.getImg() );
 			if ( url == "tribolium.tif" )
 			{
@@ -230,11 +248,12 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		try
 		{
 			final Img< T > inputimg = ( Img< T > ) ioService.open( this.getClass().getResource( url ).getPath() );
+			final Img< UnsignedShortType > gt = ( Img< UnsignedShortType > ) ioService.open( this.getClass().getResource( url.substring( 0, url.length() - 4 ) + "_gt_labeling.tif" ).getPath() );
 			if ( inputimg != null )
 			{
-				final InputCache< T > input = new InputCache<>( inputimg );
+				final InputCache< T > input = new InputCache<>( inputimg, gt );
 				inputs.put( url, input );
-				inputStep.setImage( input.getInput() );
+				inputStep.setImage( input.getInput(), input.getGT() );
 				setPercentiles( inputStep, inputStep.getImg() );
 				computeInputPercentiles( inputStep.getImg() );
 				if ( url == "tribolium.tif" )
@@ -262,7 +281,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		}
 	}
 
-	private void setPercentiles( final AbstractWorkflowImgStep< T > step, final IterableInterval< T > img)
+	private void setPercentiles( final AbstractWorkflowImgStep< T > step, final IterableInterval< T > img )
 	{
 		final ValuePair< T, T > percentiles = computeInputPercentiles( img );
 		step.setLowerPercentile( percentiles.getA().getRealFloat() );
@@ -289,6 +308,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			if(url != null) {
 				denoisingStep.setImage( inputs.get( url ).getDenoised( TRIBOLIUM_NET ) );
 			}
+			denoisingStep.useGaussianFilter( false );
 		}
 		if ( id == 1 )
 		{
@@ -298,6 +318,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			if(url != null) {
 				denoisingStep.setImage( inputs.get( url ).getDenoised( PLANARIA_NET ) );
 			}
+			denoisingStep.useGaussianFilter( false );
 		}
 		if ( id == 2 )
 		{

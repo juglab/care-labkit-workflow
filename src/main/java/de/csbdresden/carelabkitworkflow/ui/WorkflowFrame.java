@@ -101,7 +101,14 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		actionMap.put( keyNetwork1, new ChangeNetworkAction( keyNetwork1, 0 ) );
 		actionMap.put( keyNetwork2, new ChangeNetworkAction( keyNetwork2, 1 ) );
 		actionMap.put( keyGaussFilter, new ChangeNetworkAction( keyGaussFilter, 2 ) );
-		
+
+		final String keySigmaDown = "sigmaDown";
+		final String keySigmaUp = "sigmaUp";
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_N, 0 ), keySigmaDown );
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_M, 0 ), keySigmaUp );
+		actionMap.put( keySigmaDown, new ChangeSigmaAction( keySigmaDown, -1.0f ) );
+		actionMap.put( keySigmaUp, new ChangeSigmaAction( keySigmaUp, 1.0f ) );
+
 		final String keySigmaValue = "sigmaValue";
 		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_EXCLAMATION_MARK, 0 ), keySigmaValue + "0");
 		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_AT, 0 ), keySigmaValue + "1");
@@ -130,6 +137,13 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 //		final String keySegmentation1 = "segmentation1";
 //		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_Z, 0 ), keySegmentation1 );
 //		actionMap.put( keySegmentation1, new ChangeSegmentationAction( keySegmentation1, 0 ) );
+
+		final String keyThresholdDown = "thresholdDown";
+		final String keyThresholdUp = "thresholdUp";
+		inputMap.put( KeyStroke.getKeyStroke( "released LEFT" ), keyThresholdDown );
+		inputMap.put( KeyStroke.getKeyStroke( "released RIGHT" ), keyThresholdUp );
+		actionMap.put( keyThresholdDown, new ChangeThresholdAction( keyThresholdDown, -0.05f ) );
+		actionMap.put( keyThresholdUp, new ChangeThresholdAction( keyThresholdUp, +0.05f ) );
 
 		final String keyThresholdManual = "manualThreshold";
 		final String keyThresholdOtsu = "otsuThreshold";
@@ -364,7 +378,79 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			} ).start();
 		}
 	}
-	
+
+	private class ChangeSigmaAction extends AbstractAction
+	{
+
+		private final float change;
+
+		public ChangeSigmaAction( final String actionCommand, final float change )
+		{
+			this.change = change;
+			putValue( ACTION_COMMAND_KEY, actionCommand );
+		}
+
+		@Override
+		public void actionPerformed( final ActionEvent actionEvt )
+		{
+			System.out.println( actionEvt.getActionCommand() + " pressed " + change );
+			new Thread( () -> {
+				synchronized ( wf )
+				{
+					networkPanel.startProgress();
+					wf.setGaussSigma( wf.getGaussSigma() + change );
+					wf.runDenoising();
+					networkPanel.update();
+					networkPanel.endProgress();
+					segmentationPanel.startProgress();
+					wf.runSegmentation();
+					segmentationPanel.update();
+					segmentationPanel.endProgress();
+					outputPanel.startProgress();
+					wf.calculateOutput();
+					outputPanel.update();
+					outputPanel.endProgress();
+				}
+			} ).start();
+		}
+	}
+
+	private class ChangeThresholdAction extends AbstractAction
+	{
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 1L;
+
+		private final float change;
+
+		public ChangeThresholdAction( String actionCommand, final float change )
+		{
+			this.change = change;
+			putValue( ACTION_COMMAND_KEY, actionCommand );
+		}
+
+		@Override
+		public void actionPerformed( ActionEvent actionEvt )
+		{
+			System.out.println( actionEvt.getActionCommand() + " pressed" );
+			new Thread( () -> {
+				synchronized ( wf )
+				{
+					segmentationPanel.startProgress();
+					wf.setThreshold( wf.getThreshold() + change );
+					wf.runSegmentation();
+					segmentationPanel.update();
+					segmentationPanel.endProgress();
+					outputPanel.startProgress();
+					wf.calculateOutput();
+					outputPanel.update();
+					outputPanel.endProgress();
+				}
+			} ).start();
+		}
+	}
+
 	private class SetSigmaAction extends AbstractAction
 	{
 		

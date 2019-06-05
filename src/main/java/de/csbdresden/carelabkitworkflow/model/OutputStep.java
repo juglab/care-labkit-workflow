@@ -2,14 +2,14 @@ package de.csbdresden.carelabkitworkflow.model;
 
 public class OutputStep extends AbstractWorkflowStep
 {
-	private int result = -1;
+	private double result = -1;
 
-	public int getResult()
+	public double getResult()
 	{
 		return result;
 	}
 
-	public void setResult( final int result )
+	public void setResult( final double result )
 	{
 		this.result = result;
 	}

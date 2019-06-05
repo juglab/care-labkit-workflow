@@ -6,16 +6,20 @@ import java.util.Map;
 import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 
 public class InputCache< T extends RealType< T > & NativeType< T > >
 {
 	private final Img< T > input;
+	
+	private final Img< UnsignedShortType > gt;
 
 	private final Map< String, Img< T > > denoised;
 
-	public InputCache( final Img< T > input )
+	public InputCache( final Img< T > input, final Img< UnsignedShortType > gt )
 	{
 		this.input = input;
+		this.gt = gt;
 		denoised = new HashMap<>();
 	}
 
@@ -32,5 +36,10 @@ public class InputCache< T extends RealType< T > & NativeType< T > >
 	public void setDenoised( final String modelUrl, final Img< T > denoisedInput )
 	{
 		denoised.put( modelUrl, denoisedInput );
+	}
+
+	public Img<UnsignedShortType> getGT()
+	{
+		return gt;
 	}
 }
