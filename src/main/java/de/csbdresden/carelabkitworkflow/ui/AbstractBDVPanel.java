@@ -74,8 +74,9 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 	{
 		setLayout( new MigLayout( "fillx, insets 10 10 10 10", "[]", "[][]" ) );
 		final JLabel titleLabel = new JLabel( title );
+		titleLabel.setFont( new Font( "Ubuntu", Font.BOLD, 52 ) );
 		titleLabel.setBorder( BorderFactory.createEmptyBorder( 20, 20, 20, 20 ) );
-		add( titleLabel, "dock south" );
+		add( titleLabel, "dock north" );
 		super.initStep();
 		InputTriggerConfig config = null;
 		try

@@ -36,8 +36,9 @@ public class ResultPanel extends AbstractProgressPanel
 		result.setFont( font );
 		add( result, "pos 0.5al 0.5al" );
 		JLabel titleLabel = new JLabel( title );
+		titleLabel.setFont( new Font( "Ubuntu", Font.BOLD, 52 ) );
 		titleLabel.setBorder( BorderFactory.createEmptyBorder( 20, 20, 20, 20 ) );
-		add( titleLabel, "dock south" );
+		add( titleLabel, "dock north" );
 		super.initStep();
 	}
 

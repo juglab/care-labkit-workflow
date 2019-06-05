@@ -73,10 +73,10 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		workflows.add( outputPanel, "grow, width " + w + ":" + w + ":" + w );
 
 		this.setContentPane( workflows );
-		inputPanel.init( this, "INPUT [q,w]" );
-		networkPanel.init( this, "DENOISE [e,r]" );
-		segmentationPanel.init( this, "SEGMENTATION [z, ← →]" );
-		outputPanel.init( "RESULT" );
+		inputPanel.init( this, "Input" );
+		networkPanel.init( this, "Denoising" );
+		segmentationPanel.init( this, "Segmentation" );
+		outputPanel.init( "Scoring" );
 	}
 
 	private void setKeyBindings()
