@@ -112,10 +112,5 @@
 			<groupId>sc.fiji</groupId>
 			<artifactId>bigdataviewer-vistools</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>de.mpicbg.ulman</groupId>
-  			<artifactId>CTC-paper-FijiPlugins</artifactId>
-  			<version>1.4.0</version>
-		</dependency>
 	</dependencies>
 </project>
