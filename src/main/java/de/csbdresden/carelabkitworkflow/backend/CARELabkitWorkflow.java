@@ -75,9 +75,9 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 	private String url;
 
 	private final Converter< I, UnsignedShortType > conv;
-	
-	private final SEG_Score seg;
-	
+
+	private boolean updated = false;
+
 	public CARELabkitWorkflow( final boolean loadChachedCARE )
 	{
 		this.loadChachedCARE = loadChachedCARE;
@@ -95,8 +95,6 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 				output.set( input.getInteger() );
 			}
 		};
-
-		seg = new SEG_Score( opService.log() );
 	}
 
 	public void run()
@@ -113,7 +111,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			outputStep.setResult( -1 );
 			return;
 		} ;
-
+		final SEG_Score seg = new SEG_Score( opService.log() );
 		double score = seg.calculate( inputStep.getGT(), ( RandomAccessibleInterval< UnsignedShortType > ) Converters.convert( segmentationStep.getLabeling().getIndexImg(), conv, new UnsignedShortType() ) );
 
 		outputStep.setResult( score );
@@ -215,13 +213,13 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		}
 	}
 
-	public double getOutput()
+	public synchronized double getOutput()
 	{
 		return outputStep.getResult();
 	}
 
 	@SuppressWarnings( "unchecked" )
-	public void setInput( final int id )
+	public synchronized void setInput( final int id )
 	{
 		url = "";
 		if ( id == 0 )
@@ -288,17 +286,17 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		step.setUpperPercentile( percentiles.getB().getRealFloat() );
 	}
 
-	public RandomAccessibleInterval< T > getInput()
+	public synchronized RandomAccessibleInterval< T > getInput()
 	{
 		return inputStep.getImg();
 	}
 
-	public RandomAccessibleInterval< T > getDenoisedInput()
+	public synchronized RandomAccessibleInterval< T > getDenoisedInput()
 	{
 		return denoisingStep.getImg();
 	}
 
-	public void setDenoisingMethod( final int id )
+	public synchronized void setDenoisingMethod( final int id )
 	{
 		if ( id == 0 )
 		{
@@ -307,16 +305,14 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			denoisingStep.setName( "Trained on Tribolium" );
 			denoisingStep.setImage( inputs.get( url ).getDenoised( TRIBOLIUM_NET ) );
 			denoisingStep.useGaussianFilter( false );
-		}
-		if ( id == 1 )
+		}else if ( id == 1 )
 		{
 			denoisingStep.setModelUrl( PLANARIA_NET );
 			denoisingStep.setInfo( PLANARIA_NET_INFO );
 			denoisingStep.setName( "Trained on Planaria" );
 			denoisingStep.setImage( inputs.get( url ).getDenoised( PLANARIA_NET ) );
 			denoisingStep.useGaussianFilter( false );
-		}
-		if ( id == 2 )
+		}else if ( id == 2 )
 		{
 			denoisingStep.setModelUrl( GAUSS_FILTER );
 			denoisingStep.setInfo( "Gauss Filtering" );
@@ -336,7 +332,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		denoisingStep.setImage( out );
 	}
 
-	public void setSegmentation( final int id )
+	public synchronized void setSegmentation( final int id )
 	{
 		segmentationStep.setUseLabkit( id == 2 );
 		segmentationStep.setCurrentId( id );
@@ -351,12 +347,12 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		}
 	}
 
-	public float getThreshold()
+	public synchronized float getThreshold()
 	{
 		return segmentationStep.getThreshold();
 	}
 
-	public void setThreshold( final float threshold )
+	public synchronized void setThreshold( final float threshold )
 	{
 		if ( threshold >= 0 && threshold <= 1 )
 			segmentationStep.setThreshold( threshold );
@@ -372,37 +368,51 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		return new ValuePair< T, T >( lp, up );
 	}
 
-	public InputStep< T > getInputStep()
+	public synchronized InputStep< T > getInputStep()
 	{
 		return inputStep;
 	}
 
-	public DenoisingStep< T > getNetworkStep()
+	public synchronized DenoisingStep< T > getNetworkStep()
 	{
 		return denoisingStep;
 	}
 
-	public SegmentationStep< T, I > getSegmentationStep()
+	public synchronized SegmentationStep< T, I > getSegmentationStep()
 	{
 		return segmentationStep;
 	}
 
-	public OutputStep getOutputStep()
+	public synchronized OutputStep getOutputStep()
 	{
 		return outputStep;
 	}
 
-	public float getGaussSigma()
+	public synchronized float getGaussSigma()
 	{
 		return denoisingStep.getGaussSigma();
 	}
 
-	public void setGaussSigma( final float sigma )
+	public synchronized void setGaussSigma( final float sigma )
 	{
 		if ( sigma > 0 )
 		{
 			System.out.println( sigma );
 			denoisingStep.setGaussSigma( sigma );
 		}
+	}
+
+	public synchronized void requestUpdate()
+	{
+		updated = false;
+	}
+
+	public synchronized boolean needsUpdate()
+	{
+		return !updated;
+	}
+	
+	public synchronized void updated() {
+		updated = true;
 	}
 }

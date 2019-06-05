@@ -6,22 +6,22 @@ public abstract class AbstractWorkflowStep
 
 	private boolean activated = false;
 
-	public boolean isActivated()
+	public synchronized boolean isActivated()
 	{
 		return activated;
 	}
 
-	public void setActivated( final boolean activated )
+	public synchronized void setActivated( final boolean activated )
 	{
 		this.activated = activated;
 	}
 
-	public int getCurrentId()
+	public synchronized int getCurrentId()
 	{
 		return currentId;
 	}
 
-	public void setCurrentId( final int id )
+	public synchronized void setCurrentId( final int id )
 	{
 		currentId = id;
 	}

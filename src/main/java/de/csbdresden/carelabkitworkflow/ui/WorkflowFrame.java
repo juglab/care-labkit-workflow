@@ -15,6 +15,8 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 
+import org.python.modules.synchronize;
+
 import de.csbdresden.carelabkitworkflow.backend.CARELabkitWorkflow;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.IntegerType;
@@ -186,40 +188,111 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		{
 			System.out.println( actionEvt.getActionCommand() + " pressed" );
 			new Thread( () -> {
-				synchronized ( wf )
+				if ( wf.getInputStep().getCurrentId() == id &&
+						wf.getInputStep().isActivated() )
 				{
-					outputPanel.reset();
-					if ( wf.getInputStep().getCurrentId() == id &&
-							wf.getInputStep().isActivated() )
+					wf.getInputStep().setActivated( false );
+				}
+				else
+				{
+					wf.getInputStep().setActivated( true );
+					wf.setInput( id );
+					if ( wf.getNetworkStep().isActivated() )
 					{
-						wf.getInputStep().setActivated( false );
+						wf.setDenoisingMethod( wf.getNetworkStep().getCurrentId() );
+					}
+				}
+				wf.requestUpdate();
+				updateOnInputChange();
+			} ).start();
+		}
+	}
+
+	private void updateOnThresholdChange()
+	{
+		if ( wf.needsUpdate() )
+		{
+			int segmentationID = -1;
+			float ts = -1;
+			outputPanel.reset();
+			segmentationPanel.reset();
+			while ( segmentationID != wf.getSegmentationStep().getCurrentId() && ts != wf.getThreshold() )
+			{
+				segmentationID = wf.getSegmentationStep().getCurrentId();
+				ts = wf.getThreshold();
+
+				wf.runSegmentation();
+				final boolean correctThreshold = wf.getSegmentationStep().getCurrentId() == 0 ? ts == wf.getThreshold() : true;
+				if ( segmentationID == wf.getSegmentationStep().getCurrentId() && correctThreshold )
+				{
+					segmentationPanel.update();
+					wf.calculateOutput();
+					if ( wf.getSegmentationStep().isActivated() && wf.getInputStep().isActivated() )
+					{
+						outputPanel.update();
 					}
 					else
 					{
-						wf.getInputStep().setActivated( true );
-						wf.setInput( id );
-						if ( wf.getNetworkStep().isActivated() )
-						{
-							wf.setDenoisingMethod( wf.getNetworkStep().getCurrentId() );
-						}
+						outputPanel.reset();
 					}
-					inputPanel.startProgress();
-					inputPanel.update();
-					inputPanel.endProgress();
-					networkPanel.startProgress();
-					wf.runDenoising();
-					networkPanel.update();
-					networkPanel.endProgress();
-					segmentationPanel.startProgress();
-					wf.runSegmentation();
-					segmentationPanel.update();
-					segmentationPanel.endProgress();
-					outputPanel.startProgress();
-					wf.calculateOutput();
-					outputPanel.update();
-					outputPanel.endProgress();
+
 				}
-			} ).start();
+			}
+
+			wf.updated();
+		}
+	}
+
+	private synchronized void updateOnDenoiseChange()
+	{
+		if ( wf.needsUpdate() )
+		{
+			int networkID = -1;
+			float sigma = -1;
+			outputPanel.reset();
+			segmentationPanel.reset();
+			networkPanel.reset();
+			while ( networkID != wf.getNetworkStep().getCurrentId() && sigma != wf.getGaussSigma() )
+			{
+				networkID = wf.getNetworkStep().getCurrentId();
+				sigma = wf.getGaussSigma();
+				wf.runDenoising();
+				if ( networkID == wf.getNetworkStep().getCurrentId() && sigma == wf.getGaussSigma() )
+				{
+					networkPanel.update();
+					updateOnThresholdChange();
+				}
+			}
+		}
+
+		wf.updated();
+	}
+
+	private void updateOnInputChange()
+	{
+		if ( wf.needsUpdate() )
+		{
+
+			int inputID = -1;
+			outputPanel.reset();
+			segmentationPanel.reset();
+			networkPanel.reset();
+			inputPanel.reset();
+			while ( inputID != wf.getInputStep().getCurrentId() )
+			{
+				inputID = wf.getInputStep().getCurrentId();
+				if ( inputID == wf.getInputStep().getCurrentId() )
+				{
+					inputPanel.update();
+					updateOnDenoiseChange();
+				}
+				else
+				{
+					inputID = wf.getInputStep().getCurrentId();
+				}
+			}
+
+			wf.updated();
 		}
 	}
 
@@ -243,32 +316,19 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		{
 			System.out.println( actionEvt.getActionCommand() + " pressed" );
 			new Thread( () -> {
-				synchronized ( wf )
+				outputPanel.reset();
+				if ( wf.getNetworkStep().getCurrentId() == id &&
+						wf.getNetworkStep().isActivated() )
 				{
-					outputPanel.reset();
-					if ( wf.getNetworkStep().getCurrentId() == id &&
-							wf.getNetworkStep().isActivated() )
-					{
-						wf.getNetworkStep().setActivated( false );
-					}
-					else
-					{
-						wf.getNetworkStep().setActivated( true );
-						wf.setDenoisingMethod( id );
-					}
-					networkPanel.startProgress();
-					wf.runDenoising();
-					networkPanel.update();
-					networkPanel.endProgress();
-					segmentationPanel.startProgress();
-					wf.runSegmentation();
-					segmentationPanel.update();
-					segmentationPanel.endProgress();
-					outputPanel.startProgress();
-					wf.calculateOutput();
-					outputPanel.update();
-					outputPanel.endProgress();
+					wf.getNetworkStep().setActivated( false );
 				}
+				else
+				{
+					wf.getNetworkStep().setActivated( true );
+					wf.setDenoisingMethod( id );
+				}
+				wf.requestUpdate();
+				updateOnDenoiseChange();
 			} ).start();
 		}
 	}
@@ -293,28 +353,19 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		{
 			System.out.println( actionEvt.getActionCommand() + " pressed" );
 			new Thread( () -> {
-				synchronized ( wf )
+				outputPanel.reset();
+				if ( wf.getSegmentationStep().getCurrentId() == id &&
+						wf.getSegmentationStep().isActivated() )
 				{
-					outputPanel.reset();
-					if ( wf.getSegmentationStep().getCurrentId() == id &&
-							wf.getSegmentationStep().isActivated() )
-					{
-						wf.getSegmentationStep().setActivated( false );
-					}
-					else
-					{
-						wf.getSegmentationStep().setActivated( true );
-						wf.setSegmentation( id );
-					}
-					segmentationPanel.startProgress();
-					wf.runSegmentation();
-					segmentationPanel.update();
-					segmentationPanel.endProgress();
-					outputPanel.startProgress();
-					wf.calculateOutput();
-					outputPanel.update();
-					outputPanel.endProgress();
+					wf.getSegmentationStep().setActivated( false );
 				}
+				else
+				{
+					wf.getSegmentationStep().setActivated( true );
+					wf.setSegmentation( id );
+				}
+				wf.requestUpdate();
+				updateOnThresholdChange();
 			} ).start();
 		}
 	}
@@ -335,21 +386,11 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		{
 			System.out.println( actionEvt.getActionCommand() + " pressed " + change );
 			new Thread( () -> {
-				synchronized ( wf )
+				wf.setGaussSigma( wf.getGaussSigma() + change );
+				if ( wf.getNetworkStep().isGauss() )
 				{
-					networkPanel.startProgress();
-					wf.setGaussSigma( wf.getGaussSigma() + change );
-					wf.runDenoising();
-					networkPanel.update();
-					networkPanel.endProgress();
-					segmentationPanel.startProgress();
-					wf.runSegmentation();
-					segmentationPanel.update();
-					segmentationPanel.endProgress();
-					outputPanel.startProgress();
-					wf.calculateOutput();
-					outputPanel.update();
-					outputPanel.endProgress();
+					wf.requestUpdate();
+					updateOnDenoiseChange();
 				}
 			} ).start();
 		}
@@ -375,18 +416,9 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		{
 			System.out.println( actionEvt.getActionCommand() + " pressed" );
 			new Thread( () -> {
-				synchronized ( wf )
-				{
-					segmentationPanel.startProgress();
-					wf.setThreshold( wf.getThreshold() + change );
-					wf.runSegmentation();
-					segmentationPanel.update();
-					segmentationPanel.endProgress();
-					outputPanel.startProgress();
-					wf.calculateOutput();
-					outputPanel.update();
-					outputPanel.endProgress();
-				}
+				wf.setThreshold( wf.getThreshold() + change );
+				wf.requestUpdate();
+				updateOnThresholdChange();
 			} ).start();
 		}
 	}
