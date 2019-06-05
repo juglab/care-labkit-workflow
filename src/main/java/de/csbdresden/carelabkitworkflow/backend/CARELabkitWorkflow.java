@@ -286,14 +286,18 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			denoisingStep.setModelUrl( TRIBOLIUM_NET );
 			denoisingStep.setInfo( TRIBOLIUM_NET_INFO );
 			denoisingStep.setName( "Trained on Tribolium" );
-			denoisingStep.setImage( inputs.get( url ).getDenoised( TRIBOLIUM_NET ) );
+			if(url != null) {
+				denoisingStep.setImage( inputs.get( url ).getDenoised( TRIBOLIUM_NET ) );
+			}
 		}
 		if ( id == 1 )
 		{
 			denoisingStep.setModelUrl( PLANARIA_NET );
 			denoisingStep.setInfo( PLANARIA_NET_INFO );
 			denoisingStep.setName( "Trained on Planaria" );
-			denoisingStep.setImage( inputs.get( url ).getDenoised( PLANARIA_NET ) );
+			if(url != null) {
+				denoisingStep.setImage( inputs.get( url ).getDenoised( PLANARIA_NET ) );
+			}
 		}
 		if ( id == 2 )
 		{
@@ -304,11 +308,14 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			run_gaussFilter();
 		}
 		denoisingStep.setCurrentId( id );
-		setPercentiles( denoisingStep, denoisingStep.getImg() );
+		if(denoisingStep.getImg() != null) {
+			setPercentiles( denoisingStep, denoisingStep.getImg() );
+		}
 	}
 
 	private void run_gaussFilter()
 	{
+		if(url == null) return;
 		final Img< T > input = inputs.get( url ).getInput();
 		final Img< T > out = input.factory().create( input );
 		opService.filter().gauss( out, input, denoisingStep.getGaussSigma() );

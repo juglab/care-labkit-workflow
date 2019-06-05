@@ -103,26 +103,17 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		actionMap.put( keyGaussFilter, new ChangeNetworkAction( keyGaussFilter, 2 ) );
 		
 		final String keySigmaValue = "sigmaValue";
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F1, 0 ), keySigmaValue + "0");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F2, 0 ), keySigmaValue + "1");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F3, 0 ), keySigmaValue + "2");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F4, 0 ), keySigmaValue + "3");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F5, 0 ), keySigmaValue + "4");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F6, 0 ), keySigmaValue + "5");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F7, 0 ), keySigmaValue + "6");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F8, 0 ), keySigmaValue + "7");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F9, 0 ), keySigmaValue + "8");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F10, 0 ), keySigmaValue + "9");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F11, 0 ), keySigmaValue + "10");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F12, 0 ), keySigmaValue + "11");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F13, 0 ), keySigmaValue + "12");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F14, 0 ), keySigmaValue + "13");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F15, 0 ), keySigmaValue + "14");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F16, 0 ), keySigmaValue + "15");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F17, 0 ), keySigmaValue + "16");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F18, 0 ), keySigmaValue + "17");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F19, 0 ), keySigmaValue + "18");
-		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F20, 0 ), keySigmaValue + "19");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_EXCLAMATION_MARK, 0 ), keySigmaValue + "0");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_AT, 0 ), keySigmaValue + "1");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_PERIOD, 0 ), keySigmaValue + "2");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_DOLLAR, 0 ), keySigmaValue + "3");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_COMMA, 0 ), keySigmaValue + "4");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_AMPERSAND, 0 ), keySigmaValue + "5");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_ASTERISK, 0 ), keySigmaValue + "6");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_LEFT_PARENTHESIS, 0 ), keySigmaValue + "7");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_RIGHT_PARENTHESIS, 0 ), keySigmaValue + "8");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_UNDERSCORE, 0 ), keySigmaValue + "9");
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_MINUS, 0 ), keySigmaValue + "10");
 
 		actionMap.put( keySigmaValue+"0", new SetSigmaAction( keySigmaValue+"0", 0) );
 		actionMap.put( keySigmaValue+"1", new SetSigmaAction( keySigmaValue+"1", 1) );
@@ -135,15 +126,6 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		actionMap.put( keySigmaValue+"8", new SetSigmaAction( keySigmaValue+"8", 8) );
 		actionMap.put( keySigmaValue+"9", new SetSigmaAction( keySigmaValue+"9", 9) );
 		actionMap.put( keySigmaValue+"10", new SetSigmaAction( keySigmaValue+"10", 10) );
-		actionMap.put( keySigmaValue+"11", new SetSigmaAction( keySigmaValue+"11", 11) );
-		actionMap.put( keySigmaValue+"12", new SetSigmaAction( keySigmaValue+"12", 12) );
-		actionMap.put( keySigmaValue+"13", new SetSigmaAction( keySigmaValue+"13", 13) );
-		actionMap.put( keySigmaValue+"14", new SetSigmaAction( keySigmaValue+"14", 14) );
-		actionMap.put( keySigmaValue+"15", new SetSigmaAction( keySigmaValue+"15", 15) );
-		actionMap.put( keySigmaValue+"16", new SetSigmaAction( keySigmaValue+"16", 16) );
-		actionMap.put( keySigmaValue+"17", new SetSigmaAction( keySigmaValue+"17", 17) );
-		actionMap.put( keySigmaValue+"18", new SetSigmaAction( keySigmaValue+"18", 18) );
-		actionMap.put( keySigmaValue+"19", new SetSigmaAction( keySigmaValue+"19", 19) );
 
 //		final String keySegmentation1 = "segmentation1";
 //		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_Z, 0 ), keySegmentation1 );
@@ -389,7 +371,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		private final float value;
 		
 		public SetSigmaAction( final String actionCommand, final float value ) {
-			this.value = value;
+			this.value = value/2.f;
 			putValue( ACTION_COMMAND_KEY, actionCommand );
 		}
 
@@ -426,7 +408,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 
 		public SetThresholdAction( String actionCommand, final float value )
 		{
-			this.value = value;
+			this.value = value/20.f;
 			putValue( ACTION_COMMAND_KEY, actionCommand );
 		}
 

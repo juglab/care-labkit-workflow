@@ -8,7 +8,7 @@ import net.imglib2.type.numeric.RealType;
 public abstract class AbstractWorkflowLabelingStep< T extends RealType< T > & NativeType< T > > extends AbstractWorkflowStep
 {
 
-	private String infoText;
+	private String infoText = "";
 	
 	private String sourceName;
 	
