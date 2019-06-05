@@ -48,6 +48,10 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 	protected BdvStackSource< T > source;
 
 	private JPanel infoPanel;
+	
+	protected JLabel methodLabel;
+	
+	protected JLabel numberLabel;
 
 	final AccumulateProjectorFactory< ARGBType > myFactory = new AccumulateProjectorFactory< ARGBType >()
 	{
@@ -65,8 +69,6 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 		}
 
 	};
-
-	private JLabel methodLabel;
 
 	public void init( final WorkflowFrame< T, ? extends IntegerType< ? > > parent, final String title )
 	{
@@ -94,11 +96,14 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 		infoPanel = new JPanel( new MigLayout( "fillx", "[]", "[]" ) );
 		infoPanel.setBackground( Color.DARK_GRAY );
 		infoPanel.setPreferredSize( new Dimension( 200, 200 ) );
-		methodLabel = new JLabel( "Method" );
+		methodLabel = new JLabel( "" );
 		methodLabel.setFont(new Font( "Ubuntu", Font.BOLD, 48 ));
 		methodLabel.setForeground( Color.WHITE );
+		numberLabel = new JLabel( "" );
+		numberLabel.setFont( new Font( "Ubuntu", Font.BOLD, 32 ) );
+		numberLabel.setForeground( Color.WHITE );
 		infoPanel.add( methodLabel, "wrap" );
-		infoPanel.add( new JLabel( "10.0" ), "wrap" );
+		infoPanel.add( numberLabel, "wrap" );
 		add( infoPanel, "grow" );
 		initStep();
 		revalidate();
@@ -112,13 +117,18 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 
 			if ( step.getImg() != null )
 			{
-				methodLabel.setText( step.getName() );
 				source = BdvFunctions.show( ( RandomAccessibleInterval< T > ) step.getImg(), step.getName(), Bdv.options().addTo( bdv ) );
 				source.setDisplayRange( step.getLowerPercentile(), step.getUpperPercentile() );
+				updateMethodLabel();
+				updateNumberLabel();
 			}
 		}
 	}
 
+	protected abstract void updateMethodLabel();
+	
+	protected abstract void updateNumberLabel();
+	
 	protected abstract void initStep();
 
 }

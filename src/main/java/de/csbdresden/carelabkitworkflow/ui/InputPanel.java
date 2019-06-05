@@ -46,4 +46,24 @@ public class InputPanel< T extends RealType< T > & NativeType< T > > extends Abs
 	{
 		bdv.getViewerPanel().removeAllSources();
 	}
+
+	@Override
+	protected void updateMethodLabel()
+	{
+		if ( inputStep.isActivated() )
+		{
+			methodLabel.setText( inputStep.getName() );
+		}
+		else
+		{
+			methodLabel.setText( "" );
+		}
+	}
+
+	@Override
+	protected void updateNumberLabel()
+	{
+		// nothing to do
+	}
+
 }

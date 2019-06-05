@@ -44,4 +44,28 @@ public class NetworkPanel< T extends RealType< T > & NativeType< T > > extends A
 	{
 		bdv.getBdvHandle().getViewerPanel().removeAllSources();
 	}
+
+	@Override
+	protected void updateMethodLabel()
+	{
+		if ( networkStep.isActivated() )
+		{
+			methodLabel.setText( networkStep.getName() );
+		}
+		else
+		{
+			methodLabel.setText( "" );
+		}
+	}
+
+	@Override
+	protected void updateNumberLabel()
+	{
+		if ( networkStep.isActivated() && networkStep.isGauss() )
+		{
+			numberLabel.setText( "   Sigma = " + String.valueOf( Math.round( networkStep.getGaussSigma() * 100)/100 ) );
+		} else {
+			numberLabel.setText( "" );
+		}
+	}
 }

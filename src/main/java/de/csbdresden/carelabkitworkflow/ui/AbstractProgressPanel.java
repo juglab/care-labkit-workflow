@@ -30,4 +30,5 @@ public abstract class AbstractProgressPanel extends JPanel
 	{
 		progressBar.setVisible( false );
 	}
+	
 }

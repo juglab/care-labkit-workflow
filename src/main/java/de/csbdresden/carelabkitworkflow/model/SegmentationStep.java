@@ -20,6 +20,8 @@ public class SegmentationStep< T extends RealType< T > & NativeType< T >, I exte
 
 	private boolean useLabkit = false; // otherwise threshold
 
+	private boolean manual;
+
 	public ImgLabeling< String, I > getLabeling()
 	{
 		return segmentation;
@@ -56,5 +58,14 @@ public class SegmentationStep< T extends RealType< T > & NativeType< T >, I exte
 	public void setUseLabkit( final boolean useLabkit )
 	{
 		this.useLabkit = useLabkit;
+	}
+
+	public boolean useManual()
+	{
+		return this.manual;
+	}
+	
+	public void setManual(final boolean manual) {
+		this.manual = manual;
 	}
 }

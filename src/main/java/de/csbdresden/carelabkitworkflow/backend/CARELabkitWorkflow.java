@@ -335,8 +335,8 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 	public synchronized void setSegmentation( final int id )
 	{
 		segmentationStep.setUseLabkit( id == 2 );
+		segmentationStep.setManual( id == 0 );
 		segmentationStep.setCurrentId( id );
-		segmentationStep.setInfo( SEGMENTATION_INFO );
 		if ( id == 0 )
 		{
 			segmentationStep.setName( "Manual Threshold" );

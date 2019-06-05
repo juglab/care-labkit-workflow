@@ -68,31 +68,34 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 			{
 //				synchronized ( segmentationStep )
 //				{
-					RandomAccessibleInterval< LabelingType< String > > labeling = segmentationStep.getLabeling();
+				RandomAccessibleInterval< LabelingType< String > > labeling = segmentationStep.getLabeling();
 
-					final LabelingMapping< String > mapping = Util.getTypeFromInterval( labeling ).getMapping();
-					final ColorTableConverter< String > conv = new ColorTableConverter< String >( mapping );
-					final RandomColorTable< T, String, I > segmentColorTable = new RandomColorTable<>( mapping, conv, bdv.getViewerPanel() );
-					conv.addColorTable( segmentColorTable );
-					segmentColorTable.fillLut();
-					segmentColorTable.update();
+				final LabelingMapping< String > mapping = Util.getTypeFromInterval( labeling ).getMapping();
+				final ColorTableConverter< String > conv = new ColorTableConverter< String >( mapping );
+				final RandomColorTable< T, String, I > segmentColorTable = new RandomColorTable<>( mapping, conv, bdv.getViewerPanel() );
+				conv.addColorTable( segmentColorTable );
+				segmentColorTable.fillLut();
+				segmentColorTable.update();
 
-					if ( networkStep.isActivated() )
-					{
-						displayInput( networkStep );
-					}
-					else
-					{
-						displayInput( inputStep );
-					}
-					labelingSource = ( BdvStackSource< ARGBType > ) BdvFunctions.show( Converters.convert( labeling, conv, new ARGBType() ), String.valueOf( segmentationStep.getCurrentId() ), Bdv.options().addTo( bdv ) );
-					labelingSource.setDisplayRange( 0, 255 );
+				if ( networkStep.isActivated() )
+				{
+					displayInput( networkStep );
+				}
+				else
+				{
+					displayInput( inputStep );
+				}
+				labelingSource = ( BdvStackSource< ARGBType > ) BdvFunctions.show( Converters.convert( labeling, conv, new ARGBType() ), String.valueOf( segmentationStep.getCurrentId() ), Bdv.options().addTo( bdv ) );
+				labelingSource.setDisplayRange( 0, 255 );
+				updateMethodLabel();
+				updateNumberLabel();
 //				}
 			}
 		}
 	}
-	
-	private void displayInput(final AbstractWorkflowImgStep< T > step ) {
+
+	private void displayInput( final AbstractWorkflowImgStep< T > step )
+	{
 		source = BdvFunctions.show( ( RandomAccessibleInterval< T > ) step.getImg(), segmentationStep.getName(), Bdv.options().addTo( bdv ) );
 		source.setDisplayRange( step.getLowerPercentile(), step.getUpperPercentile() );
 	}
@@ -106,6 +109,32 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 	protected void initStep()
 	{
 		// NB: Nothing to do
+	}
+
+	@Override
+	protected void updateMethodLabel()
+	{
+		if ( segmentationStep.isActivated() )
+		{
+			methodLabel.setText( segmentationStep.getName() );
+		}
+		else
+		{
+			methodLabel.setText( "" );
+		}
+	}
+
+	@Override
+	protected void updateNumberLabel()
+	{
+		if ( segmentationStep.isActivated() && segmentationStep.useManual() )
+		{
+			numberLabel.setText( String.valueOf( "   Threshold = " + Math.round( segmentationStep.getThreshold() * 100 ) / 100.0 ) );
+		}
+		else
+		{
+			numberLabel.setText( "" );
+		}
 	}
 
 }
