@@ -46,22 +46,15 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 
 	}
 
-	protected void initStep()
-	{
-		this.segmentationStep.setInfoTextPanel( infoTextPane );
-	}
-
 	public void update()
 	{
 		if ( !segmentationStep.isActivated() )
 		{
 			showInBdv( null );
-			infoTextPane.setText( EMPTY_INFO_TEXT );
 		}
 		else
 		{
 			showSegmentation();
-			segmentationStep.updateInfoText();
 		}
 	}
 
@@ -107,6 +100,12 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 	public void reset()
 	{
 		bdv.getBdvHandle().getViewerPanel().removeAllSources();
+	}
+
+	@Override
+	protected void initStep()
+	{
+		// NB: Nothing to do
 	}
 
 }

@@ -28,12 +28,10 @@ public class InputPanel< T extends RealType< T > & NativeType< T > > extends Abs
 		if ( !inputStep.isActivated() )
 		{
 			showInBdv( null );
-			infoTextPane.setText( EMPTY_INFO_TEXT );
 		}
 		else
 		{
 			showInBdv( inputStep );
-			infoTextPane.setText( inputStep.getCurrentInfoText() );
 
 		}
 	}

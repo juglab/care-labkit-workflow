@@ -20,8 +20,6 @@ public class SegmentationStep< T extends RealType< T > & NativeType< T >, I exte
 
 	private boolean useLabkit = false; // otherwise threshold
 
-	private JTextPane infoTextPanel;
-
 	public ImgLabeling< String, I > getLabeling()
 	{
 		return segmentation;
@@ -48,12 +46,6 @@ public class SegmentationStep< T extends RealType< T > & NativeType< T >, I exte
 	public synchronized void setThreshold( final float threshold )
 	{
 		this.threshold = threshold;
-		updateInfoText();
-	}
-
-	public synchronized void updateInfoText()
-	{
-		infoTextPanel.setText( java.text.MessageFormat.format( getCurrentInfoText(), new String[] { String.valueOf( Math.round( this.threshold * 1000 ) / 1000.0 ) } ) );
 	}
 
 	public boolean isUseLabkit()
@@ -64,10 +56,5 @@ public class SegmentationStep< T extends RealType< T > & NativeType< T >, I exte
 	public void setUseLabkit( final boolean useLabkit )
 	{
 		this.useLabkit = useLabkit;
-	}
-
-	public void setInfoTextPanel( final JTextPane infoTextPanel )
-	{
-		this.infoTextPanel = infoTextPanel;
 	}
 }
