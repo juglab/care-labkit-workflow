@@ -129,7 +129,7 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 	{
 		if ( segmentationStep.isActivated() && segmentationStep.useManual() )
 		{
-			numberLabel.setText( String.valueOf( "   Threshold = " + Math.round( segmentationStep.getThreshold() * 100 ) / 100.0 ) );
+			numberLabel.setText( String.valueOf( "   Schwellwert = " + Math.round( segmentationStep.getThreshold() * 100 ) / 100.0 ) );
 		}
 		else
 		{

@@ -72,11 +72,11 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 
 	public void init( final WorkflowFrame< T, ? extends IntegerType< ? > > parent, final String title )
 	{
-		setLayout( new MigLayout( "fillx, insets 10 10 10 10", "[]", "[][]" ) );
+		setLayout( new MigLayout( "insets 10 10 10 10", "[center]", "[][][]" ) );
 		final JLabel titleLabel = new JLabel( title );
 		titleLabel.setFont( new Font( "Ubuntu", Font.BOLD, 52 ) );
 		titleLabel.setBorder( BorderFactory.createEmptyBorder( 20, 20, 20, 20 ) );
-		add( titleLabel, "dock north" );
+		add( titleLabel, "wrap" );
 		super.initStep();
 		InputTriggerConfig config = null;
 		try
@@ -93,7 +93,7 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 			bdv.getViewerPanel().setBackground( bgColor );
 		}
 		bdv.getViewerPanel().setMinimumSize( new Dimension( 20, 20 ) );
-		add( bdv.getViewerPanel(), "push, span, grow, wrap", 0 );
+		add( bdv.getViewerPanel(), "push, span, grow, wrap" );
 		infoPanel = new JPanel( new MigLayout( "fillx", "[]", "[]" ) );
 		infoPanel.setBackground( Color.DARK_GRAY );
 		infoPanel.setPreferredSize( new Dimension( 200, 200 ) );

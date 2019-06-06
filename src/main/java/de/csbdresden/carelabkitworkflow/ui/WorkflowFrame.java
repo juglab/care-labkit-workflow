@@ -70,10 +70,10 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		workflows.add( outputPanel, "grow, width " + w + ":" + w + ":" + w );
 
 		this.setContentPane( workflows );
-		inputPanel.init( this, "Input" );
-		networkPanel.init( this, "Denoising" );
-		segmentationPanel.init( this, "Segmentation" );
-		outputPanel.init( "Scoring" );
+		inputPanel.init( this, "Eingabe" );
+		networkPanel.init( this, "Entrauschen" );
+		segmentationPanel.init( this, "Segmentierung" );
+		outputPanel.init( "Validierung" );
 	}
 
 	private void initSerialPort(String port1, final String port2)

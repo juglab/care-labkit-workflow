@@ -2,7 +2,7 @@ package de.csbdresden.carelabkitworkflow.model;
 
 public abstract class AbstractWorkflowStep
 {
-	private int currentId = -1;
+	private int currentId = 0;
 
 	private boolean activated = false;
 
