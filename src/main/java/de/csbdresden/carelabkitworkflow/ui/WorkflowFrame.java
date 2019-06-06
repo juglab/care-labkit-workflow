@@ -1,29 +1,19 @@
 package de.csbdresden.carelabkitworkflow.ui;
 
-import java.awt.Color;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowEvent;
-
-import javax.swing.AbstractAction;
-import javax.swing.ActionMap;
-import javax.swing.InputMap;
-import javax.swing.JComponent;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.KeyStroke;
-
-import com.fazecast.jSerialComm.SerialPort;
-import com.fazecast.jSerialComm.SerialPortEvent;
-import com.fazecast.jSerialComm.SerialPortMessageListener;
-
 import de.csbdresden.carelabkitworkflow.backend.CARELabkitWorkflow;
+import jssc.SerialPort;
+import jssc.SerialPortEventListener;
+import jssc.SerialPortException;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
 import net.miginfocom.swing.MigLayout;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
 
 public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends IntegerType< I > > extends JFrame
 {
@@ -47,18 +37,18 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 
 	private boolean fullScreen = false;
 
-	private SerialPort sp;
+	private SerialPort sp1, sp2;
 
 	static GraphicsDevice device = GraphicsEnvironment
 			.getLocalGraphicsEnvironment().getScreenDevices()[ 0 ];
 
-	public WorkflowFrame( final CARELabkitWorkflow< T, I > wf, final String port )
+	public WorkflowFrame(final CARELabkitWorkflow<T, I> wf, String port1, final String port2)
 	{
 		super( "Bio-Image Analysis Workflow" );
 		this.wf = wf;
 		createWorkflowPanels();
 		setKeyBindings();
-		initSerialPort(port);
+		initSerialPort(port1, port2);
 	}
 
 	private void createWorkflowPanels()
@@ -86,97 +76,133 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		outputPanel.init( "Scoring" );
 	}
 
-	private void initSerialPort(final String port)
+	private void initSerialPort(String port1, final String port2)
 	{
-		sp = SerialPort.getCommPort( port ); // device name
-														// TODO:
-														// must be
-														// changed
-		sp.setComPortParameters( 9600, 8, 1, 0 ); // default connection settings
-													// for Arduino
-		sp.setComPortTimeouts( SerialPort.TIMEOUT_WRITE_BLOCKING, 0, 0 ); // block
-																			// until
-																			// bytes
-																			// can
-																			// be
-																			// written
-
-		if ( sp.openPort() )
-		{
-			System.out.println( "Port is open :)" );
-		}
-		else
-		{
-			System.out.println( "Failed to open port :(" );
-			return;
-		}
-
-		MessageListener listener = new MessageListener();
-		sp.addDataListener( listener );
+		sp1 = setupSerialPort(port1);
+		sp2 = setupSerialPort(port2);
 
 	}
 
-	private final class MessageListener implements SerialPortMessageListener
-	{
-		@Override
-		public int getListeningEvents()
-		{
-			return SerialPort.LISTENING_EVENT_DATA_RECEIVED;
+	private SerialPort setupSerialPort(String port) {
+		SerialPort serialPort = new SerialPort(port);
+		try {
+			serialPort.openPort();
+
+			serialPort.setParams(SerialPort.BAUDRATE_9600,
+					SerialPort.DATABITS_8,
+					SerialPort.STOPBITS_1,
+					SerialPort.PARITY_NONE);
+
+			serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_RTSCTS_IN |
+					SerialPort.FLOWCONTROL_RTSCTS_OUT);
+
+			serialPort.addEventListener(new PortReader(serialPort), SerialPort.MASK_RXCHAR);
+
+		}
+		catch (SerialPortException ex) {
+			System.out.println("There are an error on writing string to port т: " + ex);
+		}
+		return serialPort;
+	}
+
+	private class PortReader implements SerialPortEventListener {
+
+		private final SerialPort serialPort;
+		String msg = "";
+
+		public PortReader(SerialPort serialPort) {
+			this.serialPort = serialPort;
 		}
 
 		@Override
-		public byte[] getMessageDelimiter()
-		{
-			return new byte[] { ( byte ) 0x0a };
+		public void serialEvent(jssc.SerialPortEvent event) {
+			if(event.getEventValue() > 0) {
+				try {
+					msg += serialPort.readString(event.getEventValue());
+					String delim = "\r\n";
+					boolean endPresent = msg.endsWith(delim);
+					String [] parts = msg.split(delim);
+						for (int i = 0; i < parts.length; i++) {
+							if(i != parts.length-1) {
+								if(parts[i] != null) handleMsg(parts[i]);
+							} else {
+								if(parts[i] == null) msg = "";
+								if(endPresent) {
+									handleMsg(parts[i]);
+									msg = "";
+								} else {
+									msg = parts[i];
+								}
+							}
+						}
+				}
+				catch (SerialPortException ex) {
+					System.out.println("Error in receiving string from COM-port: " + ex);
+				}
+			}
 		}
 
-		@Override
-		public boolean delimiterIndicatesEndOfMessage()
-		{
-			return true;
-		}
-
-		@Override
-		public void serialEvent( SerialPortEvent event )
-		{
-			byte[] delimitedMessage = event.getReceivedData();
-			String msg = new String( delimitedMessage );
-			msg = msg.replace( "\n", "" );
-
-			switch ( msg )
+		private void handleMsg(String text) {
+			text = text.trim().replace("\r", "").replace("\n", "");
+			if(text.isEmpty()) return;
+//			System.out.println("Received from " + serialPort.getPortName() + ": " + text);
+			if(text.startsWith("R")) {
+				sendToSerialPort(sp1, text);
+				sendToSerialPort(sp2, text);
+			}
+			switch ( text )
 			{
-			case "q":
+			case "R1_T0":
 				inputChanged( "input1", 0 );
 				break;
-			case "w":
+			case "R1_T1":
 				inputChanged( "input2", 1 );
 				break;
-			case "e":
+			case "R1_NO":
+				removeInput("input removed");
+				break;
+			case "R0_T0":
 				changeNetworkAction( "network1", 0 );
 				break;
-			case "r":
+			case "R0_T1":
 				changeNetworkAction( "network2", 1 );
 				break;
-			case "g":
+			case "R0_T2":
 				changeNetworkAction( "gaussFilter", 2 );
 				break;
-			case "z":
+			case "R0_NO":
+				removeNetwork("network removed");
+				break;
+			case "R2_T0":
 				changeSegmentationAction( "manualThreshold", 0 );
 				break;
-			case "x":
+			case "R2_T1":
 				changeSegmentationAction( "otsuThreshold", 1 );
 				break;
+			case "R2_NO":
+				removeSegmentation("segmentation removed");
+				break;
 			default:
-				if (msg.contains( "sigma: " )) {
-					float sigma = Float.parseFloat( msg.substring( 7 ) );
+				if (text.contains( "S1" )) {
+					float sigma = Float.parseFloat( text.substring( 3 ) ) / 1024.f*10.f;
+//						System.out.println("sigma: " + sigma);
 					setSigmaAction( "sigmaChanged_"+String.valueOf( sigma ), sigma );
-				} else if (msg.contains( "threshold: " )) {
-					float ts = Float.parseFloat( msg.substring( 11 ) );
+				} else if (text.contains( "S2" )) {
+					float ts = Float.parseFloat( text.substring( 3 ) ) / 1024.f;
+//						System.out.println("threshold: " + ts);
 					setThresholdAction( "thresholdValue_"+String.valueOf( ts ), ts );
 				}
 				break;
 			}
+		}
 
+		private void sendToSerialPort(SerialPort sp, String msg) {
+			System.out.println("Sending to " + sp.getPortName() + ": " + msg);
+			try {
+				sp.writeString(msg+"\r\n");
+			} catch (SerialPortException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -316,20 +342,21 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 	private void inputChanged(final String command, final int id) {
 		System.out.println( command + " pressed" );
 		new Thread( () -> {
-			if ( wf.getInputStep().getCurrentId() == id &&
-					wf.getInputStep().isActivated() )
+			wf.getInputStep().setActivated( true );
+			wf.setInput( id );
+			if ( wf.getNetworkStep().isActivated() )
 			{
-				wf.getInputStep().setActivated( false );
+				wf.setDenoisingMethod( wf.getNetworkStep().getCurrentId() );
 			}
-			else
-			{
-				wf.getInputStep().setActivated( true );
-				wf.setInput( id );
-				if ( wf.getNetworkStep().isActivated() )
-				{
-					wf.setDenoisingMethod( wf.getNetworkStep().getCurrentId() );
-				}
-			}
+			wf.requestUpdate();
+			updateOnInputChange();
+		} ).start();
+	}
+
+	private void removeInput(String command) {
+		System.out.println( command + " pressed" );
+		new Thread( () -> {
+			wf.getInputStep().setActivated( false );
 			wf.requestUpdate();
 			updateOnInputChange();
 		} ).start();
@@ -339,16 +366,18 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		System.out.println( command + " pressed" );
 		new Thread( () -> {
 			outputPanel.reset();
-			if ( wf.getNetworkStep().getCurrentId() == id &&
-					wf.getNetworkStep().isActivated() )
-			{
-				wf.getNetworkStep().setActivated( false );
-			}
-			else
-			{
-				wf.getNetworkStep().setActivated( true );
-				wf.setDenoisingMethod( id );
-			}
+			wf.getNetworkStep().setActivated( true );
+			wf.setDenoisingMethod( id );
+			wf.requestUpdate();
+			updateOnDenoiseChange();
+		} ).start();
+	}
+
+	private void removeNetwork(final String command) {
+		System.out.println( command + " pressed" );
+		new Thread( () -> {
+			outputPanel.reset();
+			wf.getNetworkStep().setActivated( false );
 			wf.requestUpdate();
 			updateOnDenoiseChange();
 		} ).start();
@@ -358,22 +387,25 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		System.out.println( command + " pressed" );
 		new Thread( () -> {
 			outputPanel.reset();
-			if ( wf.getSegmentationStep().getCurrentId() == id &&
-					wf.getSegmentationStep().isActivated() )
-			{
-				wf.getSegmentationStep().setActivated( false );
-			}
-			else
-			{
-				wf.getSegmentationStep().setActivated( true );
-				wf.setSegmentation( id );
-			}
+			wf.getSegmentationStep().setActivated( true );
+			wf.setSegmentation( id );
+			wf.requestUpdate();
+			updateOnThresholdChange();
+		} ).start();
+	}
+
+	private void removeSegmentation(final String command) {
+		System.out.println( command + " pressed" );
+		new Thread( () -> {
+			outputPanel.reset();
+			wf.getSegmentationStep().setActivated( false );
 			wf.requestUpdate();
 			updateOnThresholdChange();
 		} ).start();
 	}
 
 	private void setSigmaAction(final String command, final float sigma) {
+		if(Math.abs(wf.getGaussSigma()-sigma)<0.5) return;
 		System.out.println( command + " pressed " + sigma );
 		new Thread( () -> {
 			wf.setGaussSigma( sigma );
@@ -386,11 +418,14 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 	}
 
 	private void setThresholdAction(final String command, final float ts) {
+		if(Math.abs(wf.getThreshold()-ts)<0.05) return;
 		System.out.println( command + " pressed" );
 		new Thread( () -> {
 			wf.setThreshold( ts );
-			wf.requestUpdate();
-			updateOnThresholdChange();
+			if(wf.getSegmentationStep().useManual()) {
+				wf.requestUpdate();
+				updateOnThresholdChange();
+			}
 		} ).start();
 	}
 

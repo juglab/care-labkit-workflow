@@ -26,7 +26,7 @@ public class ResultPanel extends AbstractProgressPanel
 	public ResultPanel( final OutputStep outputStep )
 	{
 		this.outputStep = outputStep;
-		setBackground( new Color( 255, 246, 49 ) );
+		setBackground( new Color( 197, 49, 255 ) );
 		setLayout( new MigLayout( "fill" ) );
 	}
 

@@ -1,28 +1,6 @@
 package de.csbdresden.carelabkitworkflow.backend;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
-import org.scijava.command.CommandModule;
-import org.scijava.command.CommandService;
-import org.scijava.io.IOService;
-import org.scijava.plugin.Parameter;
-
-import com.fazecast.jSerialComm.SerialPort;
-import com.fazecast.jSerialComm.SerialPortDataListener;
-import com.fazecast.jSerialComm.SerialPortEvent;
-import com.fazecast.jSerialComm.SerialPortMessageListener;
-
-import de.csbdresden.carelabkitworkflow.model.AbstractWorkflowImgStep;
-import de.csbdresden.carelabkitworkflow.model.DenoisingStep;
-import de.csbdresden.carelabkitworkflow.model.InputStep;
-import de.csbdresden.carelabkitworkflow.model.OutputStep;
-import de.csbdresden.carelabkitworkflow.model.SegmentationStep;
+import de.csbdresden.carelabkitworkflow.model.*;
 import de.csbdresden.carelabkitworkflow.util.SEG_Score;
 import de.csbdresden.csbdeep.commands.GenericNetwork;
 import net.imagej.ops.OpService;
@@ -32,8 +10,6 @@ import net.imglib2.algorithm.labeling.ConnectedComponents.StructuringElement;
 import net.imglib2.converter.Converter;
 import net.imglib2.converter.Converters;
 import net.imglib2.img.Img;
-import net.imglib2.roi.labeling.ImgLabeling;
-import net.imglib2.roi.labeling.LabelRegions;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.IntegerType;
@@ -42,6 +18,15 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.Pair;
 import net.imglib2.util.ValuePair;
 import net.imglib2.view.Views;
+import org.scijava.command.CommandModule;
+import org.scijava.command.CommandService;
+import org.scijava.io.IOService;
+import org.scijava.plugin.Parameter;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I extends IntegerType< I > >
 {

@@ -19,7 +19,7 @@ public class NetworkPanel< T extends RealType< T > & NativeType< T > > extends A
 	public NetworkPanel( final DenoisingStep< T > networkStep )
 	{
 		this.networkStep = networkStep;
-		setBackground( new Color( 197, 49, 255 ) );
+		setBackground( new Color( 255, 246, 49 ) );
 	}
 
 	public void update()

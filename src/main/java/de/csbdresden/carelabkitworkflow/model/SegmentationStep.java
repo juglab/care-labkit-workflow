@@ -62,7 +62,7 @@ public class SegmentationStep< T extends RealType< T > & NativeType< T >, I exte
 
 	public boolean useManual()
 	{
-		return this.manual;
+		return getCurrentId() == 0;
 	}
 	
 	public void setManual(final boolean manual) {
