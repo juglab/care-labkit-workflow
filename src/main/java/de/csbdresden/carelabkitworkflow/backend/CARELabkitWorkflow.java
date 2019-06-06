@@ -1,9 +1,6 @@
 package de.csbdresden.carelabkitworkflow.backend;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -12,11 +9,6 @@ import org.scijava.command.CommandModule;
 import org.scijava.command.CommandService;
 import org.scijava.io.IOService;
 import org.scijava.plugin.Parameter;
-
-import com.fazecast.jSerialComm.SerialPort;
-import com.fazecast.jSerialComm.SerialPortDataListener;
-import com.fazecast.jSerialComm.SerialPortEvent;
-import com.fazecast.jSerialComm.SerialPortMessageListener;
 
 import de.csbdresden.carelabkitworkflow.model.AbstractWorkflowImgStep;
 import de.csbdresden.carelabkitworkflow.model.DenoisingStep;
@@ -32,8 +24,6 @@ import net.imglib2.algorithm.labeling.ConnectedComponents.StructuringElement;
 import net.imglib2.converter.Converter;
 import net.imglib2.converter.Converters;
 import net.imglib2.img.Img;
-import net.imglib2.roi.labeling.ImgLabeling;
-import net.imglib2.roi.labeling.LabelRegions;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.IntegerType;
@@ -46,16 +36,13 @@ import net.imglib2.view.Views;
 public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I extends IntegerType< I > >
 {
 
-	private static final String PLANARIA_NET_INFO = "CARE network trained on pairs of low- and high-quality images. The low quality images were acquired with a x-times lower exposure time and a y-times lower laser power.";
+	public static final String PLANARIA_NAME = "Schmidtea";
 
-	private static final String TRIBOLIUM_NET_INFO = "CARE network trained on pairs of low- and high-quality images. The low quality images were acquired with a x-times lower exposure time and a y-times lower laser power.";
+	public static final String TRIBOLIUM_NAME = "Tribolium";
 
 	private static final String TRIBOLIUM_NET = "http://csbdeep.bioimagecomputing.com/model-tribolium.zip";
 
 	private static final String PLANARIA_NET = "http://csbdeep.bioimagecomputing.com/model-planaria.zip";
-
-	private static final String SEGMENTATION_INFO = "A straight forward way to obtain a segmentation, i. e. detection of individual cells, is to threshold the image. This means all regions with brightness over a given threshold value are considered foreground and all values below are considered background. \n"
-			+ "Current threshold: {0}";
 
 	private static final String GAUSS_FILTER = "Gauss_Filter";
 
@@ -105,7 +92,6 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		};
 	}
 
-
 	public void run()
 	{
 		runDenoising();
@@ -113,11 +99,12 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		calculateOutput();
 	}
 
-	public void calculateOutput()
+	public synchronized void calculateOutput()
 	{
 		if ( !outputStep.isActivated() || segmentationStep.getLabeling() == null )
 		{
 			outputStep.setResult( -1 );
+			outputStep.setInputName( "" );
 			return;
 		}
 
@@ -125,6 +112,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		double score = seg.calculate( inputStep.getGT(), ( RandomAccessibleInterval< UnsignedShortType > ) Converters.convert( segmentationStep.getLabeling().getIndexImg(), conv, new UnsignedShortType() ) );
 
 		outputStep.setResult( score );
+		outputStep.setInputName( inputStep.getName() );
 		System.out.println(
 				"Threshold: " + segmentationStep.getThreshold() + ", calculated output " + outputStep.getResult() );
 	}
@@ -134,7 +122,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		// TODO
 	}
 
-	private void runManualThreshold()
+	private synchronized void runManualThreshold()
 	{
 		if ( getSegmentationInput() != null )
 		{
@@ -148,7 +136,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		}
 	}
 
-	private void runOtsuThreshold()
+	private synchronized void runOtsuThreshold()
 	{
 		if ( getSegmentationInput() != null )
 		{
@@ -167,7 +155,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		return denoisingStep.isActivated() ? denoisingStep.getImg() : inputStep.getImg();
 	}
 
-	public void runSegmentation()
+	public synchronized void runSegmentation()
 	{
 		if ( !segmentationStep.isActivated() || getSegmentationInput() == null || !inputStep.isActivated() ) { return; }
 		if ( segmentationStep.isUseLabkit() )
@@ -184,7 +172,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		}
 	}
 
-	public void runDenoising()
+	public synchronized void runDenoising()
 	{
 		if ( !denoisingStep.isActivated() || inputStep.getImg() == null || !inputStep.isActivated() )
 		{
@@ -243,13 +231,11 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			setPercentiles( inputStep, inputStep.getImg() );
 			if ( url == "tribolium.tif" )
 			{
-				inputStep.setInfo( "Tribolium information text. Image acquired with microscope xyz, exposure, staining... Some interesting fact is... maybe you want to know" );
-				inputStep.setName( "Tribolium" );
+				inputStep.setName( TRIBOLIUM_NAME );
 			}
 			else if ( url == "planaria.tif" )
 			{
-				inputStep.setInfo( "Planaria information text. Image acquired with balbla blup..." );
-				inputStep.setName( "Planaria" );
+				inputStep.setName( PLANARIA_NAME );
 			}
 			return;
 		}
@@ -266,13 +252,11 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 				computeInputPercentiles( inputStep.getImg() );
 				if ( url == "tribolium.tif" )
 				{
-					inputStep.setInfo( "Tribolium information text. Image acquired with microscope xyz, exposure, staining..." );
-					inputStep.setName( "Tribolium" );
+					inputStep.setName( TRIBOLIUM_NAME );
 				}
 				else if ( url == "planaria.tif" )
 				{
-					inputStep.setInfo( "Planaria information text. Image acquired with balbla blup..." );
-					inputStep.setName( "Planaria" );
+					inputStep.setName( PLANARIA_NAME );
 				}
 				if ( loadChachedCARE )
 				{
@@ -311,8 +295,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		if ( id == 0 )
 		{
 			denoisingStep.setModelUrl( TRIBOLIUM_NET );
-			denoisingStep.setInfo( TRIBOLIUM_NET_INFO );
-			denoisingStep.setName( "Trained on Tribolium" );
+			denoisingStep.setName( "CARE optimiert für Tribolium" );
 			if ( url != null )
 			{
 				denoisingStep.setImage( inputs.get( url ).getDenoised( TRIBOLIUM_NET ) );
@@ -322,8 +305,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		else if ( id == 1 )
 		{
 			denoisingStep.setModelUrl( PLANARIA_NET );
-			denoisingStep.setInfo( PLANARIA_NET_INFO );
-			denoisingStep.setName( "Trained on Planaria" );
+			denoisingStep.setName( "CARE optimiert für Schmidtea" );
 			if ( url != null )
 			{
 				denoisingStep.setImage( inputs.get( url ).getDenoised( PLANARIA_NET ) );
@@ -333,8 +315,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		else if ( id == 2 )
 		{
 			denoisingStep.setModelUrl( GAUSS_FILTER );
-			denoisingStep.setInfo( "Gauss Filtering" );
-			denoisingStep.setName( "Gauss Filter" );
+			denoisingStep.setName( "Gauss-Filter" );
 			denoisingStep.useGaussianFilter( true );
 			run_gaussFilter();
 		}
@@ -362,11 +343,11 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		segmentationStep.setCurrentId( id );
 		if ( id == 0 )
 		{
-			segmentationStep.setName( "Manual Threshold" );
+			segmentationStep.setName( "Manueller Schwellwert" );
 		}
 		else if ( id == 1 )
 		{
-			segmentationStep.setName( "Otsu Threshold" );
+			segmentationStep.setName( "Otsu Schwellwert" );
 		}
 	}
 

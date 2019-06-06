@@ -8,8 +8,6 @@ import net.imglib2.type.numeric.RealType;
 public abstract class AbstractWorkflowImgStep< T extends RealType< T > & NativeType< T > > extends AbstractWorkflowStep
 {
 
-	private String infoText;
-	
 	private String sourceName;
 	
 	private float lp;
@@ -24,16 +22,6 @@ public abstract class AbstractWorkflowImgStep< T extends RealType< T > & NativeT
 	
 	public String getName() {
 		return this.sourceName;
-	}
-
-	public void setInfo( final String info )
-	{
-		this.infoText = info;
-	}
-
-	public String getCurrentInfoText()
-	{
-		return this.infoText;
 	}
 	
 	public void setLowerPercentile(final float lp) {

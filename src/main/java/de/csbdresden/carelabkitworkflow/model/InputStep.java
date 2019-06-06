@@ -10,7 +10,7 @@ public class InputStep< T extends RealType< T > & NativeType< T > > extends Abst
 	private Img< T > image;
 
 	private Img< UnsignedShortType > gt;
-	
+
 	@Override
 	public Img< T > getImg()
 	{
@@ -19,11 +19,18 @@ public class InputStep< T extends RealType< T > & NativeType< T > > extends Abst
 
 	public void setImage( final Img< T > image, final Img< UnsignedShortType > gt )
 	{
-		this.image = image;
-		this.gt = gt;
+		synchronized ( gt )
+		{
+			this.image = image;
+			this.gt = gt;
+		}
 	}
-	
-	public Img<UnsignedShortType> getGT() {
-		return gt;
+
+	public Img< UnsignedShortType > getGT()
+	{
+		synchronized ( gt )
+		{
+			return gt;
+		}
 	}
 }
