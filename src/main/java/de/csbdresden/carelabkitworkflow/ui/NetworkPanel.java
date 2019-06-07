@@ -27,6 +27,7 @@ public class NetworkPanel< T extends RealType< T > & NativeType< T > > extends A
 		if ( !networkStep.isActivated() )
 		{
 			showInBdv( null );
+			reset();
 		}
 		else
 		{
@@ -43,6 +44,9 @@ public class NetworkPanel< T extends RealType< T > & NativeType< T > > extends A
 	public void reset()
 	{
 		bdv.getBdvHandle().getViewerPanel().removeAllSources();
+		numberLabel.setText( "" );
+		methodLabel.setText( "" );
+		repaint();
 	}
 
 	@Override

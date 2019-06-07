@@ -13,6 +13,8 @@ import java.util.Random;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 
+import org.netlib.util.floatW;
+
 import de.csbdresden.carelabkitworkflow.backend.CARELabkitWorkflow;
 import de.csbdresden.carelabkitworkflow.model.OutputStep;
 import net.miginfocom.swing.MigLayout;
@@ -29,7 +31,7 @@ public class ResultPanel extends AbstractProgressPanel
 
 	private JLabel result;
 
-	private List<SegStats> stats = new ArrayList<>();
+	private List< SegStats > stats = new ArrayList<>();
 
 	private final Font font = new Font( Font.MONOSPACED, Font.PLAIN, 123 );
 
@@ -37,10 +39,14 @@ public class ResultPanel extends AbstractProgressPanel
 
 	private int stats_idx;
 
+	private JLabel statLabel;
+
+	private boolean active;
+
 	public ResultPanel( final OutputStep outputStep )
 	{
 		this.outputStep = outputStep;
-		setBackground( new Color( 197, 49, 255 ) );
+		setBackground( new Color( 90, 255, 126 ) );
 		stats.add( new SegStats() ); // Tribolium
 		stats.add( new SegStats() ); // Planaria
 	}
@@ -55,15 +61,15 @@ public class ResultPanel extends AbstractProgressPanel
 		result = new JLabel();
 		result.setFont( font );
 		add( result, "pos 0.5al 0.5al, wrap" );
-		
-		final JLabel statLabel = new JLabel( "SEC-Score Statistik");
-		statLabel.setFont( new Font("Ubuntu", Font.BOLD, 48) );
-		add(statLabel, "pos 0.5al 0.70al");
-		
-		nameLabel = new JLabel("");
-		nameLabel.setFont( new Font("Ubuntu", Font.BOLD, 44) );
-		add(nameLabel, "pos 0.5al 0.75al");
-		
+
+		statLabel = new JLabel( "SEG-Score Statistik" );
+		statLabel.setFont( new Font( "Ubuntu", Font.BOLD, 48 ) );
+		add( statLabel, "pos 0.5al 0.70al" );
+
+		nameLabel = new JLabel( "" );
+		nameLabel.setFont( new Font( "Ubuntu", Font.BOLD, 44 ) );
+		add( nameLabel, "pos 0.5al 0.75al" );
+
 		super.initStep();
 	}
 
@@ -71,11 +77,19 @@ public class ResultPanel extends AbstractProgressPanel
 	{
 		showOutput( outputStep.getResult() );
 		nameLabel.setText( outputStep.getInputName() );
-		if (outputStep.getInputName() == CARELabkitWorkflow.TRIBOLIUM_NAME) {
+		if ( outputStep.getInputName() == CARELabkitWorkflow.TRIBOLIUM_NAME )
+		{
+			active = true;
 			stats_idx = 0;
-		} else if (outputStep.getInputName() == CARELabkitWorkflow.PLANARIA_NAME) {
+		}
+		else if ( outputStep.getInputName() == CARELabkitWorkflow.PLANARIA_NAME )
+		{
+			active = true;
 			stats_idx = 1;
-		} else {
+		}
+		else
+		{
+			active = false;
 			stats_idx = -1;
 		}
 		stats.get( stats_idx ).update( outputStep.getResult() );
@@ -84,6 +98,8 @@ public class ResultPanel extends AbstractProgressPanel
 	private void showOutput( final double output )
 	{
 		result.setText( output >= 0 ? String.valueOf( Math.round( output * 10000 ) / 100.0 ) + "%" : "?" );
+		statLabel.setVisible( true );
+		nameLabel.setVisible( true );
 		repaint();
 	}
 
@@ -105,38 +121,42 @@ public class ResultPanel extends AbstractProgressPanel
 		int w = getWidth();
 		int h = getHeight();
 
-		int increment = ( int ) ( (w-20) / 101.0 );
-		int spacer = (int) (w - 101*increment)/2;
+		int increment = ( int ) ( ( w - 20 ) / 101.0 );
+		int spacer = ( int ) ( w - 101 * increment ) / 2;
 
-		int current = stats.get( stats_idx ).getCurrent();
+		int current = active ? stats.get( stats_idx ).getCurrent() : -1;
 		long totalCount = stats.get( stats_idx ).getTotalCount();
 		long maxCount = stats.get( stats_idx ).getMaxCount();
-		
+
 		for ( int i = 0; i < 101; i++ )
 		{
 			if ( i == current )
 			{
-				g2d.setPaint( Color.green );
+				g2d.setPaint( Color.blue );
 			}
 			else
 			{
 				g2d.setPaint( Color.darkGray );
 			}
-			if ( totalCount > 0 )
+			if ( totalCount > 0 && active )
 			{
-				int bh = ( int ) ( stats.get( stats_idx ).getStatsFor(i) * ( 0.2*(float)h/(float)maxCount ) );
+				int bh = ( int ) ( stats.get( stats_idx ).getStatsFor( i ) * ( 0.2 * ( float ) h / ( float ) maxCount ) );
 				g2d.fillRect( spacer + i * increment, h - bh - 20, increment, bh );
 			}
 			g2d.setPaint( Color.darkGray );
-			g2d.fillRect( spacer + i * increment, h - 18, increment, 8 );
-			g2d.setPaint( Color.red );
-			g2d.fillRect( spacer + i * increment, h - 20, increment, 2 );
+			g2d.fillRect( spacer + i * increment, h - 19, increment, 9 );
+			g2d.setPaint( Color.lightGray );
+			g2d.fillRect( spacer + i * increment, h - 20, increment, 1 );
 		}
 	}
 
 	public void reset()
 	{
 		result.setText( "" );
+		active = false;
+		statLabel.setVisible( false );
+		nameLabel.setVisible( false );
+		repaint();
 	}
 
 }

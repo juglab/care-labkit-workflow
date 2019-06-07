@@ -42,13 +42,13 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 	static GraphicsDevice device = GraphicsEnvironment
 			.getLocalGraphicsEnvironment().getScreenDevices()[ 0 ];
 
-	public WorkflowFrame(final CARELabkitWorkflow<T, I> wf, String port1, final String port2)
+	public WorkflowFrame( final CARELabkitWorkflow< T, I > wf, String port1, final String port2 )
 	{
 		super( "Bio-Image Analysis Workflow" );
 		this.wf = wf;
 		createWorkflowPanels();
 		setKeyBindings();
-		initSerialPort(port1, port2);
+		initSerialPort( port1, port2 );
 	}
 
 	private void createWorkflowPanels()
@@ -76,79 +76,101 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		outputPanel.init( "Validierung" );
 	}
 
-	private void initSerialPort(String port1, final String port2)
+	private void initSerialPort( String port1, final String port2 )
 	{
-		sp1 = setupSerialPort(port1);
-		sp2 = setupSerialPort(port2);
+		sp1 = setupSerialPort( port1 );
+		sp2 = setupSerialPort( port2 );
 
 	}
 
-	private SerialPort setupSerialPort(String port) {
-		SerialPort serialPort = new SerialPort(port);
-		try {
+	private SerialPort setupSerialPort( String port )
+	{
+		SerialPort serialPort = new SerialPort( port );
+		try
+		{
 			serialPort.openPort();
 
-			serialPort.setParams(SerialPort.BAUDRATE_9600,
+			serialPort.setParams( SerialPort.BAUDRATE_9600,
 					SerialPort.DATABITS_8,
 					SerialPort.STOPBITS_1,
-					SerialPort.PARITY_NONE);
+					SerialPort.PARITY_NONE );
 
-			serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_RTSCTS_IN |
-					SerialPort.FLOWCONTROL_RTSCTS_OUT);
+			serialPort.setFlowControlMode( SerialPort.FLOWCONTROL_RTSCTS_IN |
+					SerialPort.FLOWCONTROL_RTSCTS_OUT );
 
-			serialPort.addEventListener(new PortReader(serialPort), SerialPort.MASK_RXCHAR);
+			serialPort.addEventListener( new PortReader( serialPort ), SerialPort.MASK_RXCHAR );
 
 		}
-		catch (SerialPortException ex) {
-			System.out.println("There are an error on writing string to port т: " + ex);
+		catch ( SerialPortException ex )
+		{
+			System.out.println( "There are an error on writing string to port т: " + ex );
 		}
 		return serialPort;
 	}
 
-	private class PortReader implements SerialPortEventListener {
+	private class PortReader implements SerialPortEventListener
+	{
 
 		private final SerialPort serialPort;
+
 		String msg = "";
 
-		public PortReader(SerialPort serialPort) {
+		public PortReader( SerialPort serialPort )
+		{
 			this.serialPort = serialPort;
 		}
 
 		@Override
-		public void serialEvent(jssc.SerialPortEvent event) {
-			if(event.getEventValue() > 0) {
-				try {
-					msg += serialPort.readString(event.getEventValue());
+		public void serialEvent( jssc.SerialPortEvent event )
+		{
+			if ( event.getEventValue() > 0 )
+			{
+				try
+				{
+					msg += serialPort.readString( event.getEventValue() );
 					String delim = "\r\n";
-					boolean endPresent = msg.endsWith(delim);
-					String [] parts = msg.split(delim);
-						for (int i = 0; i < parts.length; i++) {
-							if(i != parts.length-1) {
-								if(parts[i] != null) handleMsg(parts[i]);
-							} else {
-								if(parts[i] == null) msg = "";
-								if(endPresent) {
-									handleMsg(parts[i]);
-									msg = "";
-								} else {
-									msg = parts[i];
-								}
+					boolean endPresent = msg.endsWith( delim );
+					String[] parts = msg.split( delim );
+					for ( int i = 0; i < parts.length; i++ )
+					{
+						if ( i != parts.length - 1 )
+						{
+							if ( parts[ i ] != null )
+								handleMsg( parts[ i ] );
+						}
+						else
+						{
+							if ( parts[ i ] == null )
+								msg = "";
+							if ( endPresent )
+							{
+								handleMsg( parts[ i ] );
+								msg = "";
+							}
+							else
+							{
+								msg = parts[ i ];
 							}
 						}
+					}
 				}
-				catch (SerialPortException ex) {
-					System.out.println("Error in receiving string from COM-port: " + ex);
+				catch ( SerialPortException ex )
+				{
+					System.out.println( "Error in receiving string from COM-port: " + ex );
 				}
 			}
 		}
 
-		private void handleMsg(String text) {
-			text = text.trim().replace("\r", "").replace("\n", "");
-			if(text.isEmpty()) return;
+		private void handleMsg( String text )
+		{
+			text = text.trim().replace( "\r", "" ).replace( "\n", "" );
+			if ( text.isEmpty() )
+				return;
 //			System.out.println("Received from " + serialPort.getPortName() + ": " + text);
-			if(text.startsWith("R")) {
-				sendToSerialPort(sp1, text);
-				sendToSerialPort(sp2, text);
+			if ( text.startsWith( "R" ) )
+			{
+				sendToSerialPort( sp1, text );
+				sendToSerialPort( sp2, text );
 			}
 			switch ( text )
 			{
@@ -159,7 +181,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 				inputChanged( "input2", 1 );
 				break;
 			case "R1_NO":
-				removeInput("input removed");
+				removeInput( "input removed" );
 				break;
 			case "R0_T0":
 				changeNetworkAction( "network1", 0 );
@@ -171,7 +193,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 				changeNetworkAction( "gaussFilter", 2 );
 				break;
 			case "R0_NO":
-				removeNetwork("network removed");
+				removeNetwork( "network removed" );
 				break;
 			case "R2_T0":
 				changeSegmentationAction( "manualThreshold", 0 );
@@ -180,27 +202,34 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 				changeSegmentationAction( "otsuThreshold", 1 );
 				break;
 			case "R2_NO":
-				removeSegmentation("segmentation removed");
+				removeSegmentation( "segmentation removed" );
 				break;
 			default:
-				if (text.contains( "S1" )) {
-					float sigma = Float.parseFloat( text.substring( 3 ) ) / 1024.f*10.f;
+				if ( text.contains( "S1" ) )
+				{
+					float sigma = Float.parseFloat( text.substring( 3 ) ) / 1024.f * 10.f;
 //						System.out.println("sigma: " + sigma);
-					setSigmaAction( "sigmaChanged_"+String.valueOf( sigma ), sigma );
-				} else if (text.contains( "S2" )) {
+					setSigmaAction( "sigmaChanged_" + String.valueOf( sigma ), sigma );
+				}
+				else if ( text.contains( "S2" ) )
+				{
 					float ts = Float.parseFloat( text.substring( 3 ) ) / 1024.f;
 //						System.out.println("threshold: " + ts);
-					setThresholdAction( "thresholdValue_"+String.valueOf( ts ), ts );
+					setThresholdAction( "thresholdValue_" + String.valueOf( ts ), ts );
 				}
 				break;
 			}
 		}
 
-		private void sendToSerialPort(SerialPort sp, String msg) {
-			System.out.println("Sending to " + sp.getPortName() + ": " + msg);
-			try {
-				sp.writeString(msg+"\r\n");
-			} catch (SerialPortException e) {
+		private void sendToSerialPort( SerialPort sp, String msg )
+		{
+			System.out.println( "Sending to " + sp.getPortName() + ": " + msg );
+			try
+			{
+				sp.writeString( msg + "\r\n" );
+			}
+			catch ( SerialPortException e )
+			{
 				e.printStackTrace();
 			}
 		}
@@ -212,9 +241,174 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		int condition = JComponent.WHEN_IN_FOCUSED_WINDOW;
 		final InputMap inputMap = workflows.getInputMap( condition );
 
+		final String keyInput1 = "input1";
+		final String keyInput2 = "input2";
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_Q, 0 ), keyInput1 );
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_W, 0 ), keyInput2 );
+		actionMap.put( keyInput1, new ChangeInputAction( keyInput1, 0 ) );
+		actionMap.put( keyInput2, new ChangeInputAction( keyInput2, 1 ) );
+
+		final String keyNetwork1 = "network1";
+		final String keyNetwork2 = "network2";
+		final String keyGaussFilter = "gaussFilter";
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_E, 0 ), keyNetwork1 );
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_R, 0 ), keyNetwork2 );
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_G, 0 ), keyGaussFilter );
+		actionMap.put( keyNetwork1, new ChangeNetworkAction( keyNetwork1, 0 ) );
+		actionMap.put( keyNetwork2, new ChangeNetworkAction( keyNetwork2, 1 ) );
+		actionMap.put( keyGaussFilter, new ChangeNetworkAction( keyGaussFilter, 2 ) );
+
+		final String keySigmaDown = "sigmaDown";
+		final String keySigmaUp = "sigmaUp";
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_N, 0 ), keySigmaDown );
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_M, 0 ), keySigmaUp );
+		actionMap.put( keySigmaDown, new ChangeSigmaAction( keySigmaDown, -0.5f ) );
+		actionMap.put( keySigmaUp, new ChangeSigmaAction( keySigmaUp, 0.5f ) );
+
+		final String keyThresholdDown = "thresholdDown";
+		final String keyThresholdUp = "thresholdUp";
+		inputMap.put( KeyStroke.getKeyStroke( "released LEFT" ), keyThresholdDown );
+		inputMap.put( KeyStroke.getKeyStroke( "released RIGHT" ), keyThresholdUp );
+		actionMap.put( keyThresholdDown, new ChangeThresholdAction( keyThresholdDown, -0.05f ) );
+		actionMap.put( keyThresholdUp, new ChangeThresholdAction( keyThresholdUp, +0.05f ) );
+
+		final String keyThresholdManual = "manualThreshold";
+		final String keyThresholdOtsu = "otsuThreshold";
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_Z, 0 ), keyThresholdManual );
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_X, 0 ), keyThresholdOtsu );
+		actionMap.put( keyThresholdManual, new ChangeSegmentationAction( keyThresholdManual, 0 ) );
+		actionMap.put( keyThresholdOtsu, new ChangeSegmentationAction( keyThresholdOtsu, 1 ) );
+
 		final String keyFullScreen = "fullscreen";
 		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F, 0 ), keyFullScreen );
 		actionMap.put( keyFullScreen, new FullScreenAction( keyFullScreen ) );
+	}
+
+	private class ChangeInputAction extends AbstractAction
+	{
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+		private final int id;
+
+		public ChangeInputAction( String actionCommand, final int id )
+		{
+			this.id = id;
+			putValue( ACTION_COMMAND_KEY, actionCommand );
+		}
+
+		@Override
+		public void actionPerformed( ActionEvent actionEvt )
+		{
+			if ( wf.getInputStep().isActivated() && id == wf.getInputStep().getCurrentId() )
+			{
+				removeInput( actionEvt.getActionCommand() );
+			}
+			else
+			{
+				inputChanged( actionEvt.getActionCommand(), id );
+			}
+		}
+	}
+
+	private class ChangeNetworkAction extends AbstractAction
+	{
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+		private final int id;
+
+		public ChangeNetworkAction( String actionCommand, final int id )
+		{
+			this.id = id;
+			putValue( ACTION_COMMAND_KEY, actionCommand );
+		}
+
+		@Override
+		public void actionPerformed( ActionEvent actionEvt )
+		{
+			if ( wf.getNetworkStep().isActivated() && id == wf.getNetworkStep().getCurrentId() )
+			{
+				removeNetwork( actionEvt.getActionCommand() );
+			}
+			else
+			{
+				changeNetworkAction( actionEvt.getActionCommand(), id );
+			}
+		}
+	}
+
+	private class ChangeSegmentationAction extends AbstractAction
+	{
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+		private final int id;
+
+		public ChangeSegmentationAction( String actionCommand, final int id )
+		{
+			this.id = id;
+			putValue( ACTION_COMMAND_KEY, actionCommand );
+		}
+
+		@Override
+		public void actionPerformed( ActionEvent actionEvt )
+		{
+			if ( wf.getSegmentationStep().isActivated() && id == wf.getSegmentationStep().getCurrentId() )
+			{
+				removeSegmentation( actionEvt.getActionCommand() );
+			}
+			else
+			{
+				changeSegmentationAction( actionEvt.getActionCommand(), id );
+			}
+		}
+	}
+
+	private class ChangeSigmaAction extends AbstractAction
+	{
+
+		private final float change;
+
+		public ChangeSigmaAction( final String actionCommand, final float change )
+		{
+			this.change = change;
+			putValue( ACTION_COMMAND_KEY, actionCommand );
+		}
+
+		@Override
+		public void actionPerformed( final ActionEvent actionEvt )
+		{
+			setSigmaAction( actionEvt.getActionCommand(), ( float ) (Math.round((wf.getGaussSigma() + change)*100)/100.0) );
+		}
+	}
+
+	private class ChangeThresholdAction extends AbstractAction
+	{
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 1L;
+
+		private final float change;
+
+		public ChangeThresholdAction( String actionCommand, final float change )
+		{
+			this.change = change;
+			putValue( ACTION_COMMAND_KEY, actionCommand );
+		}
+
+		@Override
+		public void actionPerformed( ActionEvent actionEvt )
+		{
+			setThresholdAction( actionEvt.getActionCommand(), ( float ) ( Math.round((wf.getThreshold() + change)*1000)/1000.0 ));
+		}
 	}
 
 	private class FullScreenAction extends AbstractAction
@@ -269,9 +463,9 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 				if ( segmentationID == wf.getSegmentationStep().getCurrentId() && correctThreshold )
 				{
 					segmentationPanel.update();
-					wf.calculateOutput();
 					if ( wf.getSegmentationStep().isActivated() && wf.getInputStep().isActivated() )
 					{
+						wf.calculateOutput();
 						outputPanel.update();
 					}
 					else
@@ -338,8 +532,9 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			wf.updated();
 		}
 	}
-	
-	private void inputChanged(final String command, final int id) {
+
+	private void inputChanged( final String command, final int id )
+	{
 		System.out.println( command + " pressed" );
 		new Thread( () -> {
 			wf.getInputStep().setActivated( true );
@@ -353,7 +548,8 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		} ).start();
 	}
 
-	private void removeInput(String command) {
+	private void removeInput( String command )
+	{
 		System.out.println( command + " pressed" );
 		new Thread( () -> {
 			wf.getInputStep().setActivated( false );
@@ -362,7 +558,8 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		} ).start();
 	}
 
-	private void changeNetworkAction(final String command, final int id) {
+	private void changeNetworkAction( final String command, final int id )
+	{
 		System.out.println( command + " pressed" );
 		new Thread( () -> {
 			outputPanel.reset();
@@ -373,7 +570,8 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		} ).start();
 	}
 
-	private void removeNetwork(final String command) {
+	private void removeNetwork( final String command )
+	{
 		System.out.println( command + " pressed" );
 		new Thread( () -> {
 			outputPanel.reset();
@@ -382,8 +580,9 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			updateOnDenoiseChange();
 		} ).start();
 	}
-	
-	private void changeSegmentationAction(final String command, final int id) {
+
+	private void changeSegmentationAction( final String command, final int id )
+	{
 		System.out.println( command + " pressed" );
 		new Thread( () -> {
 			outputPanel.reset();
@@ -394,7 +593,8 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		} ).start();
 	}
 
-	private void removeSegmentation(final String command) {
+	private void removeSegmentation( final String command )
+	{
 		System.out.println( command + " pressed" );
 		new Thread( () -> {
 			outputPanel.reset();
@@ -404,8 +604,10 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		} ).start();
 	}
 
-	private void setSigmaAction(final String command, final float sigma) {
-		if(Math.abs(wf.getGaussSigma()-sigma)<0.5) return;
+	private void setSigmaAction( final String command, final float sigma )
+	{
+		if ( Math.abs( wf.getGaussSigma() - sigma ) < 0.25 )
+			return;
 		System.out.println( command + " pressed " + sigma );
 		new Thread( () -> {
 			wf.setGaussSigma( sigma );
@@ -417,12 +619,15 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		} ).start();
 	}
 
-	private void setThresholdAction(final String command, final float ts) {
-		if(Math.abs(wf.getThreshold()-ts)<0.05) return;
+	private void setThresholdAction( final String command, final float ts )
+	{
+		if ( Math.abs( wf.getThreshold() - ts ) < 0.025 )
+			return;
 		System.out.println( command + " pressed" );
 		new Thread( () -> {
 			wf.setThreshold( ts );
-			if(wf.getSegmentationStep().useManual()) {
+			if ( wf.getSegmentationStep().useManual() )
+			{
 				wf.requestUpdate();
 				updateOnThresholdChange();
 			}

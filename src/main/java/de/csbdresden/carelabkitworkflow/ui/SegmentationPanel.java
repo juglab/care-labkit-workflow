@@ -51,6 +51,7 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 		if ( !segmentationStep.isActivated() )
 		{
 			showInBdv( null );
+			reset();
 		}
 		else
 		{
@@ -103,6 +104,9 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 	public void reset()
 	{
 		bdv.getBdvHandle().getViewerPanel().removeAllSources();
+		numberLabel.setText( "" );
+		methodLabel.setText( "" );
+		repaint();
 	}
 
 	@Override
