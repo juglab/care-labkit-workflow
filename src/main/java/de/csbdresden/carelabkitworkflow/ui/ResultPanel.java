@@ -1,23 +1,13 @@
 package de.csbdresden.carelabkitworkflow.ui;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.geom.Line2D;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-
-import javax.swing.BorderFactory;
-import javax.swing.JLabel;
-
-import org.netlib.util.floatW;
-
 import de.csbdresden.carelabkitworkflow.backend.CARELabkitWorkflow;
 import de.csbdresden.carelabkitworkflow.model.OutputStep;
 import net.miginfocom.swing.MigLayout;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ResultPanel extends AbstractProgressPanel
 {
@@ -92,6 +82,7 @@ public class ResultPanel extends AbstractProgressPanel
 			active = false;
 			stats_idx = -1;
 		}
+		if(stats_idx < 0) return;
 		stats.get( stats_idx ).update( outputStep.getResult() );
 	}
 
@@ -113,6 +104,8 @@ public class ResultPanel extends AbstractProgressPanel
 
 	private void doDrawing( Graphics g )
 	{
+
+		if(stats_idx <= 0) return;
 
 		Graphics2D g2d = ( Graphics2D ) g;
 
