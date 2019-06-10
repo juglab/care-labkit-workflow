@@ -23,8 +23,14 @@ public class SEG_Score
 		double seg = 0.0;
 		long counter = 0;
 		
-		cache.ClassifyLabels( Views.iterable( gtImg ), resImg );
-		
+		try {
+			cache.ClassifyLabels( Views.iterable( gtImg ), resImg );
+		}
+		catch(IllegalArgumentException e) {
+			System.out.println("IllegalArgumentException possibly due to missing labels");
+			return 0;
+		}
+
 		final TemporalLevel level = cache.levels.lastElement();
 		
 		final int m_match_lineSize = level.m_gt_lab.length;

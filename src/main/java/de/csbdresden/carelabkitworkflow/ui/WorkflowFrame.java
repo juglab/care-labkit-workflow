@@ -8,12 +8,15 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
 import net.miginfocom.swing.MigLayout;
+import org.apache.log4j.helpers.FileWatchdog;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
+
+import static de.csbdresden.carelabkitworkflow.backend.ServerCommunication.LABKITLABELINGFILE;
 
 public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends IntegerType< I > > extends JFrame
 {
@@ -49,6 +52,34 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		createWorkflowPanels();
 		setKeyBindings();
 		initSerialPort( port1, port2 );
+		watchLabkitLabelingFile();
+
+	}
+
+	private void watchLabkitLabelingFile() {
+		LabkitLabelingWatchFile someWatchFile = new LabkitLabelingWatchFile(LABKITLABELINGFILE);
+		someWatchFile.start();
+	}
+
+	private class LabkitLabelingWatchFile extends FileWatchdog {
+
+		protected LabkitLabelingWatchFile(String filename) {
+			super(filename);
+			setDelay(1000);
+		}
+
+		@Override
+		protected void doOnChange() {
+			if(wf.getSegmentationStep().getCurrentId() == 2) {
+				System.out.println( "update labkit" );
+				new Thread( () -> {
+					outputPanel.reset();
+					wf.requestUpdate();
+					updateOnThresholdChange();
+				} ).start();
+			}
+		}
+
 	}
 
 	private void createWorkflowPanels()
@@ -201,6 +232,9 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			case "R2_T1":
 				changeSegmentationAction( "otsuThreshold", 1 );
 				break;
+			case "R2_T2":
+				changeSegmentationAction( "labkit", 2 );
+				break;
 			case "R2_NO":
 				removeSegmentation( "segmentation removed" );
 				break;
@@ -274,10 +308,13 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 
 		final String keyThresholdManual = "manualThreshold";
 		final String keyThresholdOtsu = "otsuThreshold";
+		final String keyLabkit = "labkit";
 		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_Z, 0 ), keyThresholdManual );
 		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_X, 0 ), keyThresholdOtsu );
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_C, 0 ), keyLabkit );
 		actionMap.put( keyThresholdManual, new ChangeSegmentationAction( keyThresholdManual, 0 ) );
 		actionMap.put( keyThresholdOtsu, new ChangeSegmentationAction( keyThresholdOtsu, 1 ) );
+		actionMap.put( keyLabkit, new ChangeSegmentationAction( keyLabkit, 2 ) );
 
 		final String keyFullScreen = "fullscreen";
 		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_F, 0 ), keyFullScreen );

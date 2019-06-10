@@ -1,7 +1,9 @@
 package de.csbdresden.carelabkitworkflow.backend;
+
 import de.csbdresden.carelabkitworkflow.model.*;
 import de.csbdresden.carelabkitworkflow.util.SEG_Score;
 import de.csbdresden.csbdeep.commands.GenericNetwork;
+import ij.ImagePlus;
 import net.imagej.ops.OpService;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessibleInterval;
@@ -9,20 +11,36 @@ import net.imglib2.algorithm.labeling.ConnectedComponents.StructuringElement;
 import net.imglib2.converter.Converter;
 import net.imglib2.converter.Converters;
 import net.imglib2.img.Img;
+import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.labkit.BatchSegmenter;
+import net.imglib2.labkit.inputimage.DefaultInputImage;
+import net.imglib2.labkit.labeling.Labeling;
+import net.imglib2.labkit.labeling.LabelingSerializer;
+import net.imglib2.labkit.models.DefaultSegmentationModel;
+import net.imglib2.labkit.models.ImageLabelingModel;
+import net.imglib2.labkit.utils.progress.StatusServiceProgressWriter;
+import net.imglib2.roi.labeling.ImgLabeling;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.logic.BitType;
+import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.util.Intervals;
 import net.imglib2.util.Pair;
 import net.imglib2.util.ValuePair;
 import net.imglib2.view.Views;
+import org.apache.log4j.helpers.FileWatchdog;
+import org.scijava.Context;
+import org.scijava.app.StatusService;
 import org.scijava.command.CommandModule;
 import org.scijava.command.CommandService;
 import org.scijava.io.IOService;
 import org.scijava.plugin.Parameter;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -49,6 +67,12 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 	@Parameter
 	private CommandService commandService;
 
+	@Parameter
+	private StatusService statusService;
+
+	@Parameter
+	private Context context;
+
 	private final Map< String, InputCache< T > > inputs = new HashMap<>();
 
 	private final InputStep< T > inputStep;
@@ -67,6 +91,8 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 
 	private boolean updated = false;
 
+	private Thread labkitThread;
+
 	public CARELabkitWorkflow( final boolean loadChachedCARE )
 	{
 		this.loadChachedCARE = loadChachedCARE;
@@ -84,6 +110,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 				output.set( input.getInteger() );
 			}
 		};
+
 	}
 
 	public void run()
@@ -111,9 +138,57 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 				"Threshold: " + segmentationStep.getThreshold() + ", calculated output " + outputStep.getResult() );
 	}
 
-	private void runLabkit()
+	private synchronized void runLabkit()
 	{
-		// TODO
+		if ( getSegmentationInput() != null ) {
+
+			ServerCommunication serverCommunication = new ServerCommunication();
+			context.inject(serverCommunication);
+
+			// upload segmentation input to server
+			new Thread(() -> {
+				serverCommunication.uploadLabkitInputToServer(getSegmentationInput());
+			}).start();
+
+			// init segmentation model, serializer, labeling model
+			DefaultSegmentationModel segmentationModel = new DefaultSegmentationModel(new DefaultInputImage(
+					getSegmentationInput()), context);
+			LabelingSerializer serializer = new LabelingSerializer(context);
+			final ImageLabelingModel labelingModel = segmentationModel
+					.imageLabelingModel();
+
+			// load labeling from server file
+			Labeling labeling = null;
+			try {
+				labeling = serializer.open(serverCommunication.labelingPNG2TIF());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			labelingModel.labeling().set(labeling);
+			if(labelingModel.labeling().get().getLabels().size() == 0) {
+				System.out.println("no labels");
+				return;
+			}
+
+			//train
+			segmentationModel.train(segmentationModel
+					.selectedSegmenter().get());
+
+			//run segmentation
+			ImagePlus segImgImagePlus = ImageJFunctions.wrap( getSegmentationInput(), "seginput" );
+			Img<ARGBType> segImg = ImageJFunctions.wrap(segImgImagePlus);
+			Img<UnsignedByteType> segmentation = null;
+			try {
+				segmentation = BatchSegmenter.segment(segImg,
+						segmentationModel.selectedSegmenter().get().segmenter(),
+						Intervals.dimensionsAsIntArray(segImg),
+						new StatusServiceProgressWriter(statusService));
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			segmentationStep.setLabeling( opService.labeling().cca( segmentation, StructuringElement.FOUR_CONNECTED ) );
+		}
 	}
 
 	private synchronized void runManualThreshold()
@@ -152,9 +227,12 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 	public synchronized void runSegmentation()
 	{
 		if ( !segmentationStep.isActivated() || getSegmentationInput() == null || !inputStep.isActivated() ) { return; }
-		if ( segmentationStep.isUseLabkit() )
+		if ( segmentationStep.getCurrentId() == 2 )
 		{
-			runLabkit();
+			if(labkitThread != null) labkitThread.interrupt();
+			labkitThread = new Thread(() -> runLabkit());
+			labkitThread.run();
+			labkitThread = null;
 		}
 		else if ( segmentationStep.getCurrentId() == 0 )
 		{
@@ -342,6 +420,10 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		else if ( id == 1 )
 		{
 			segmentationStep.setName( "Otsu Schwellwert" );
+		}
+		else if ( id == 2 )
+		{
+			segmentationStep.setName( "Labkit" );
 		}
 	}
 

@@ -75,7 +75,7 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 		setLayout( new MigLayout( "insets 10 10 10 10", "[center]", "[][][]" ) );
 		final JLabel titleLabel = new JLabel( title );
 		titleLabel.setFont( new Font( "Ubuntu", Font.BOLD, 52 ) );
-		titleLabel.setBorder( BorderFactory.createEmptyBorder( 20, 20, 20, 20 ) );
+		titleLabel.setBorder( BorderFactory.createEmptyBorder( 20, 2, 20, 2 ) );
 		add( titleLabel, "wrap" );
 		super.initStep();
 		InputTriggerConfig config = null;
