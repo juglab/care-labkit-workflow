@@ -1,12 +1,14 @@
 package de.csbdresden.carelabkitworkflow.ui;
 
 import de.csbdresden.carelabkitworkflow.backend.CARELabkitWorkflow;
+import de.csbdresden.carelabkitworkflow.util.DampedValue;
 import jssc.SerialPort;
 import jssc.SerialPortEventListener;
 import jssc.SerialPortException;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
 import net.miginfocom.swing.MigLayout;
 import org.apache.log4j.helpers.FileWatchdog;
 
@@ -44,6 +46,9 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 
 	static GraphicsDevice device = GraphicsEnvironment
 			.getLocalGraphicsEnvironment().getScreenDevices()[ 0 ];
+
+	DampedValue<FloatType> thresholdSliderVal = new DampedValue<>();
+	DampedValue<FloatType> sigmaSliderVal = new DampedValue<>();
 
 	public WorkflowFrame( final CARELabkitWorkflow< T, I > wf, String port1, final String port2 )
 	{
@@ -242,14 +247,16 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 				if ( text.contains( "S1" ) )
 				{
 					float sigma = Float.parseFloat( text.substring( 3 ) ) / 1024.f * 10.f;
-//						System.out.println("sigma: " + sigma);
-					setSigmaAction( "sigmaChanged_" + String.valueOf( sigma ), sigma );
+					sigmaSliderVal.set(new FloatType(sigma));
+//						System.out.println("sigma: " + sigmaSliderVal.get());
+					setSigmaAction( "sigmaChanged_" + String.valueOf( sigmaSliderVal.get() ), sigmaSliderVal.get().getRealFloat() );
 				}
 				else if ( text.contains( "S2" ) )
 				{
 					float ts = Float.parseFloat( text.substring( 3 ) ) / 1024.f;
-//						System.out.println("threshold: " + ts);
-					setThresholdAction( "thresholdValue_" + String.valueOf( ts ), ts );
+					thresholdSliderVal.set(new FloatType(ts));
+//						System.out.println("threshold: " + thresholdSliderVal.get());
+					setThresholdAction( "thresholdValue_" + String.valueOf( thresholdSliderVal.get() ), thresholdSliderVal.get().getRealFloat() );
 				}
 				break;
 			}
