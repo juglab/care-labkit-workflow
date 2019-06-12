@@ -580,7 +580,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			}
 			wf.requestUpdate();
 			updateOnInputChange();
-		} ).start();
+		} ).run();
 	}
 
 	private void removeInput( String command )
@@ -590,7 +590,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			wf.getInputStep().setActivated( false );
 			wf.requestUpdate();
 			updateOnInputChange();
-		} ).start();
+		} ).run();
 	}
 
 	private void changeNetworkAction( final String command, final int id )
@@ -602,7 +602,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			wf.setDenoisingMethod( id );
 			wf.requestUpdate();
 			updateOnDenoiseChange();
-		} ).start();
+		} ).run();
 	}
 
 	private void removeNetwork( final String command )
@@ -613,7 +613,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			wf.getNetworkStep().setActivated( false );
 			wf.requestUpdate();
 			updateOnDenoiseChange();
-		} ).start();
+		} ).run();
 	}
 
 	private void changeSegmentationAction( final String command, final int id )
@@ -625,7 +625,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			wf.setSegmentation( id );
 			wf.requestUpdate();
 			updateOnThresholdChange();
-		} ).start();
+		} ).run();
 	}
 
 	private void removeSegmentation( final String command )
@@ -636,7 +636,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			wf.getSegmentationStep().setActivated( false );
 			wf.requestUpdate();
 			updateOnThresholdChange();
-		} ).start();
+		} ).run();
 	}
 
 	private void setSigmaAction( final String command, final float sigma )
@@ -651,7 +651,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 				wf.requestUpdate();
 				updateOnDenoiseChange();
 			}
-		} ).start();
+		} ).run();
 	}
 
 	private void setThresholdAction( final String command, final float ts )
@@ -664,7 +664,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 				wf.requestUpdate();
 				updateOnThresholdChange();
 			}
-		} ).start();
+		} ).run();
 	}
 
 	private void close()

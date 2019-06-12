@@ -59,7 +59,7 @@ public class ServerCommunication {
 	LogService log;
 
 	public static String LABKITLABELINGFILE = "/home/random/Development/imagej/project/outreach/labkit-remote/public/img/labeling.png";
-	public static String LABKITINPUTDIR = "/home/random/Development/imagej/project/outreach/labkit-remote/public/img/";
+	public static String LABKITINPUTFILE = "/home/random/Development/imagej/project/outreach/labkit-remote/public/img/segmentationinput.png";
 
 	final AccumulateProjectorFactory<ARGBType> myFactory = new AccumulateProjectorFactory<ARGBType>() {
 
@@ -112,11 +112,11 @@ public class ServerCommunication {
 		renderer.requestRepaint();
 		renderer.paint(renderState);
 		try {
-			ImageIO.write(target.bi, "png", new File(LABKITLABELINGFILE));
+			ImageIO.write(target.bi, "png", new File(LABKITINPUTFILE));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		System.out.println("saved to " + LABKITLABELINGFILE);
+		System.out.println("saved to " + LABKITINPUTFILE);
 	}
 
 	public String labelingPNG2TIF() {

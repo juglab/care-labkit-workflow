@@ -142,7 +142,8 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 
 	private synchronized void runLabkit()
 	{
-		if ( getSegmentationInput() != null )
+		Img img = getSegmentationInput();
+		if ( img != null )
 		{
 
 			ServerCommunication serverCommunication = new ServerCommunication();
@@ -150,20 +151,20 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 
 			// upload segmentation input to server
 			new Thread( () -> {
-				serverCommunication.uploadLabkitInputToServer( getSegmentationInput(),
+				serverCommunication.uploadLabkitInputToServer( img,
 						getSegmentationInputStep().getLowerPercentile(),
 						getSegmentationInputStep().getUpperPercentile());
 			} ).start();
 
 			// init segmentation model, serializer, labeling model
 			DefaultSegmentationModel segmentationModel = new DefaultSegmentationModel( new DefaultInputImage(
-					getSegmentationInput() ), context );
+					img ), context );
 			LabelingSerializer serializer = new LabelingSerializer( context );
 			final ImageLabelingModel labelingModel = segmentationModel
 					.imageLabelingModel();
 
 			// load labeling from server file
-			Labeling labeling = Labeling.createEmpty( new ArrayList<>(), getSegmentationInput() );
+			Labeling labeling = Labeling.createEmpty( new ArrayList<>(), img );
 			try
 			{
 				labeling = serializer.open( serverCommunication.labelingPNG2TIF() );
@@ -184,7 +185,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 					.selectedSegmenter().get() );
 
 			// run segmentation
-			final ImagePlus segImgImagePlus = ImageJFunctions.wrap( getSegmentationInput(), "seginput" );
+			final ImagePlus segImgImagePlus = ImageJFunctions.wrap( img, "seginput" );
 			final Img<ARGBType> segImg = ImageJFunctions.wrap(segImgImagePlus);
 			Img< UnsignedByteType > segmentation = null;
 			try
