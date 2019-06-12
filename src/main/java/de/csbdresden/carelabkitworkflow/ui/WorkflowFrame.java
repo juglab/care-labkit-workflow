@@ -488,8 +488,6 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		{
 			int segmentationID = -1;
 			float ts = -1;
-			outputPanel.reset();
-			segmentationPanel.reset();
 			while ( segmentationID != wf.getSegmentationStep().getCurrentId() && ts != wf.getThreshold() )
 			{
 				segmentationID = wf.getSegmentationStep().getCurrentId();
@@ -523,9 +521,6 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		{
 			int networkID = -1;
 			float sigma = -1;
-			outputPanel.reset();
-			segmentationPanel.reset();
-			networkPanel.reset();
 			while ( networkID != wf.getNetworkStep().getCurrentId() && sigma != wf.getGaussSigma() )
 			{
 				networkID = wf.getNetworkStep().getCurrentId();
@@ -548,10 +543,6 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		{
 
 			int inputID = -1;
-			outputPanel.reset();
-			segmentationPanel.reset();
-			networkPanel.reset();
-			inputPanel.reset();
 			while ( inputID != wf.getInputStep().getCurrentId() )
 			{
 				inputID = wf.getInputStep().getCurrentId();

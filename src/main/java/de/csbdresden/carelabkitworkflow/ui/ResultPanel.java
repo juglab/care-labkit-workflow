@@ -105,8 +105,6 @@ public class ResultPanel extends AbstractProgressPanel
 	private void doDrawing( Graphics g )
 	{
 
-		if(stats_idx <= 0) return;
-
 		Graphics2D g2d = ( Graphics2D ) g;
 
 		g2d.setPaint( Color.darkGray );

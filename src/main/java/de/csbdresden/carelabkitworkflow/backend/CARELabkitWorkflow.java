@@ -11,6 +11,7 @@ import net.imglib2.algorithm.labeling.ConnectedComponents.StructuringElement;
 import net.imglib2.converter.Converter;
 import net.imglib2.converter.Converters;
 import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.labkit.BatchSegmenter;
 import net.imglib2.labkit.inputimage.DefaultInputImage;
@@ -40,6 +41,7 @@ import org.scijava.io.IOService;
 import org.scijava.plugin.Parameter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -93,6 +95,8 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 
 	private Thread labkitThread;
 
+	private ArrayImgFactory< UnsignedByteType > facUB;
+
 	public CARELabkitWorkflow( final boolean loadChachedCARE )
 	{
 		this.loadChachedCARE = loadChachedCARE;
@@ -101,6 +105,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		segmentationStep = new SegmentationStep<>();
 		outputStep = new OutputStep();
 		outputStep.setActivated( true );
+		facUB = new ArrayImgFactory< UnsignedByteType >(new UnsignedByteType());
 		conv = new Converter< I, UnsignedShortType >()
 		{
 
@@ -140,50 +145,59 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 
 	private synchronized void runLabkit()
 	{
-		if ( getSegmentationInput() != null ) {
+		if ( getSegmentationInput() != null )
+		{
 
 			ServerCommunication serverCommunication = new ServerCommunication();
-			context.inject(serverCommunication);
+			context.inject( serverCommunication );
 
 			// upload segmentation input to server
-			new Thread(() -> {
-				serverCommunication.uploadLabkitInputToServer(getSegmentationInput());
-			}).start();
+			new Thread( () -> {
+				serverCommunication.uploadLabkitInputToServer( getSegmentationInput() );
+			} ).start();
 
 			// init segmentation model, serializer, labeling model
-			DefaultSegmentationModel segmentationModel = new DefaultSegmentationModel(new DefaultInputImage(
-					getSegmentationInput()), context);
-			LabelingSerializer serializer = new LabelingSerializer(context);
+			DefaultSegmentationModel segmentationModel = new DefaultSegmentationModel( new DefaultInputImage(
+					getSegmentationInput() ), context );
+			LabelingSerializer serializer = new LabelingSerializer( context );
 			final ImageLabelingModel labelingModel = segmentationModel
 					.imageLabelingModel();
 
 			// load labeling from server file
-			Labeling labeling = null;
-			try {
-				labeling = serializer.open(serverCommunication.labelingPNG2TIF());
-			} catch (IOException e) {
+			Labeling labeling = Labeling.createEmpty( new ArrayList< String >(), getSegmentationInput() );
+			try
+			{
+				labeling = serializer.open( serverCommunication.labelingPNG2TIF() );
+			}
+			catch ( IOException e )
+			{
 				e.printStackTrace();
 			}
-			labelingModel.labeling().set(labeling);
-			if(labelingModel.labeling().get().getLabels().size() == 0) {
-				System.out.println("no labels");
+			labelingModel.labeling().set( labeling );
+			if ( labelingModel.labeling().get().getLabels().size() == 0 )
+			{
+				System.out.println( "no labels" );
 				return;
 			}
 
-			//train
-			segmentationModel.train(segmentationModel
-					.selectedSegmenter().get());
+			// train
+			segmentationModel.train( segmentationModel
+					.selectedSegmenter().get() );
 
-			//run segmentation
-			ImagePlus segImgImagePlus = ImageJFunctions.wrap( getSegmentationInput(), "seginput" );
-			Img<ARGBType> segImg = ImageJFunctions.wrap(segImgImagePlus);
-			Img<UnsignedByteType> segmentation = null;
-			try {
-				segmentation = BatchSegmenter.segment(segImg,
+			// run segmentation
+			final ImagePlus segImgImagePlus = ImageJFunctions.wrap( getSegmentationInput(), "seginput" );
+			final Img<ARGBType> segImg = ImageJFunctions.wrap(segImgImagePlus);
+			Img< UnsignedByteType > segmentation = null;
+			try
+			{
+				segmentation = BatchSegmenter.segment( segImg,
 						segmentationModel.selectedSegmenter().get().segmenter(),
-						Intervals.dimensionsAsIntArray(segImg),
-						new StatusServiceProgressWriter(statusService));
-			} catch (InterruptedException e) {
+						Intervals.dimensionsAsIntArray( segImg ),
+						new StatusServiceProgressWriter( statusService ) );
+			}
+			catch ( InterruptedException e )
+			{
+				segmentation = facUB.create( segImg );
 				e.printStackTrace();
 			}
 
@@ -229,8 +243,9 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		if ( !segmentationStep.isActivated() || getSegmentationInput() == null || !inputStep.isActivated() ) { return; }
 		if ( segmentationStep.getCurrentId() == 2 )
 		{
-			if(labkitThread != null) labkitThread.interrupt();
-			labkitThread = new Thread(() -> runLabkit());
+			if ( labkitThread != null )
+				labkitThread.interrupt();
+			labkitThread = new Thread( () -> runLabkit() );
 			labkitThread.run();
 			labkitThread = null;
 		}
@@ -345,7 +360,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		}
 	}
 
-	private void setPercentiles(final AbstractWorkflowImgStep< T > step, final IterableInterval< T > img )
+	private void setPercentiles( final AbstractWorkflowImgStep< T > step, final IterableInterval< T > img )
 	{
 		final ValuePair< T, T > percentiles = computeInputPercentiles( img );
 		step.setLowerPercentile( percentiles.getA().getRealFloat() );
