@@ -1,28 +1,42 @@
 package de.csbdresden.carelabkitworkflow.backend;
 
-import ij.IJ;
-import ij.ImagePlus;
+import bdv.cache.CacheControl;
+import bdv.util.Bdv;
+import bdv.util.BdvFunctions;
+import bdv.util.BdvHandlePanel;
+import bdv.util.BdvStackSource;
+import bdv.viewer.Source;
+import bdv.viewer.ViewerPanel;
+import bdv.viewer.render.AccumulateProjectorFactory;
+import bdv.viewer.render.MultiResolutionRenderer;
+import bdv.viewer.render.VolatileProjector;
+import bdv.viewer.state.ViewerState;
+import de.csbdresden.carelabkitworkflow.util.AccumulateProjectorAlphaBlendingARGB;
 import io.scif.services.DatasetIOService;
 import net.imagej.DatasetService;
-import net.imagej.ImgPlus;
 import net.imagej.ops.OpService;
-import net.imglib2.Cursor;
-import net.imglib2.Localizable;
-import net.imglib2.RandomAccess;
+import net.imglib2.*;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.img.display.imagej.ImgToVirtualStack;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.ShortType;
+import net.imglib2.ui.PainterThread;
+import net.imglib2.ui.RenderTarget;
 import net.imglib2.view.IntervalView;
 import org.scijava.io.IOService;
+import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.ui.UIService;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
 
 public class ServerCommunication {
 
@@ -41,26 +55,68 @@ public class ServerCommunication {
 	@Parameter
 	UIService ui;
 
-	public static String LABKITLABELINGFILE = "/home/random/Development/imagej/project/outreach/labkit-remote/public/img/labeling.png";
-	public static String LABKITINPUTFILE = "/home/random/Development/imagej/project/outreach/labkit-remote/public/img/segmentationinput.png";
+	@Parameter
+	LogService log;
 
-	public <T extends NativeType< T > & RealType< T >> void uploadLabkitInputToServer(Img<T> img) {
-		ImgFactory<ARGBType> factory = new ArrayImgFactory(new ARGBType());
-		Img<ARGBType> output = factory.create(img);
-		Localizable cursor = img.cursor();
-		RandomAccess<T> raIn = img.randomAccess();
-		RandomAccess<ARGBType> raOut = output.randomAccess();
-		while (((Cursor) cursor).hasNext()) {
-			((Cursor) cursor).next();
-			raIn.setPosition(cursor);
-			raOut.setPosition(cursor);
-			int val = (int) (raIn.get().getRealFloat() * 255);
-			raOut.get().set(ARGBType.rgba(val, val, val, 255));
-//			System.out.println(raOut.get());
+	public static String LABKITLABELINGFILE = "/home/random/Development/imagej/project/outreach/labkit-remote/public/img/labeling.png";
+	public static String LABKITINPUTDIR = "/home/random/Development/imagej/project/outreach/labkit-remote/public/img/";
+
+	final AccumulateProjectorFactory<ARGBType> myFactory = new AccumulateProjectorFactory<ARGBType>() {
+
+		@Override
+		public synchronized AccumulateProjectorAlphaBlendingARGB createAccumulateProjector(
+				final ArrayList<VolatileProjector> sourceProjectors, final ArrayList<Source<?>> sources,
+				final ArrayList<? extends RandomAccessible<? extends ARGBType>> sourceScreenImages,
+				final RandomAccessibleInterval<ARGBType> targetScreenImages, final int numThreads,
+				final ExecutorService executorService) {
+
+			return new AccumulateProjectorAlphaBlendingARGB(sourceProjectors, sourceScreenImages, targetScreenImages,
+					numThreads, executorService);
 		}
-		ImagePlus wrappedImage = ImgToVirtualStack.wrap(ImgPlus.wrap(output));
-		IJ.run( wrappedImage, "PNG...", "save=" + LABKITINPUTFILE );
-		System.out.println("saved " + LABKITINPUTFILE);
+
+	};
+
+	public <T extends NativeType<T> & RealType<T>> void uploadLabkitInputToServer(Img<T> img, float lowerPercentile, float upperPercentile) {
+
+		BdvHandlePanel bdv = new BdvHandlePanel(null, Bdv.options().is2D().preferredSize((int) img.dimension(0), (int) img.dimension(1)).accumulateProjectorFactory(myFactory));
+		BdvStackSource<T> source = BdvFunctions.show(img, "", Bdv.options().addTo(bdv));
+		source.setDisplayRange(lowerPercentile, upperPercentile);
+		bdv.getViewerPanel().updateUI();
+		ViewerPanel viewer = bdv.getViewerPanel();
+		final ViewerState renderState = viewer.getState();
+
+		class MyTarget implements RenderTarget {
+			BufferedImage bi;
+
+			@Override
+			public BufferedImage setBufferedImage(final BufferedImage bufferedImage) {
+				bi = bufferedImage;
+				return null;
+			}
+
+			@Override
+			public int getWidth() {
+				return (int) img.dimension(0);
+			}
+
+			@Override
+			public int getHeight() {
+				return (int) img.dimension(1);
+			}
+		}
+		final MyTarget target = new MyTarget();
+		final MultiResolutionRenderer renderer = new MultiResolutionRenderer(
+				target, new PainterThread(null), new double[]{1}, 0, false, 1, null, false,
+				viewer.getOptionValues().getAccumulateProjectorFactory(), new CacheControl.Dummy());
+		renderState.setCurrentTimepoint(0);
+		renderer.requestRepaint();
+		renderer.paint(renderState);
+		try {
+			ImageIO.write(target.bi, "png", new File(LABKITLABELINGFILE));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.out.println("saved to " + LABKITLABELINGFILE);
 	}
 
 	public String labelingPNG2TIF() {
@@ -92,13 +148,11 @@ public class ServerCommunication {
 			raOut.setPosition(cursor.getIntPosition(1), 1);
 			ShortType border = new ShortType();
 			border.setReal(125);
-			if(raInBlue.get().compareTo(border) > 0) {
+			if (raInBlue.get().compareTo(border) > 0) {
 				raOut.get().setReal(1);
-			}
-			else if(raInRed.get().compareTo(border) > 0) {
+			} else if (raInRed.get().compareTo(border) > 0) {
 				raOut.get().setReal(2);
-			}
-			else {
+			} else {
 				raOut.get().setZero();
 			}
 		}

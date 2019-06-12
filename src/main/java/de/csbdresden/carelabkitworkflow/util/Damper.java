@@ -14,7 +14,6 @@ class Derivative {
 	double dv;          // derivative of velocity: acceleration
 };
 
-
 public class Damper {
 
 	static double acceleration(State state, double k, double b) {

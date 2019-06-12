@@ -153,7 +153,9 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 
 			// upload segmentation input to server
 			new Thread( () -> {
-				serverCommunication.uploadLabkitInputToServer( getSegmentationInput() );
+				serverCommunication.uploadLabkitInputToServer( getSegmentationInput(),
+						getSegmentationInputStep().getLowerPercentile(),
+						getSegmentationInputStep().getUpperPercentile());
 			} ).start();
 
 			// init segmentation model, serializer, labeling model
@@ -236,6 +238,11 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 	private Img< T > getSegmentationInput()
 	{
 		return denoisingStep.isActivated() ? denoisingStep.getImg() : inputStep.getImg();
+	}
+
+
+	private AbstractWorkflowImgStep getSegmentationInputStep() {
+		return denoisingStep.isActivated() ? denoisingStep : inputStep;
 	}
 
 	public synchronized void runSegmentation()
