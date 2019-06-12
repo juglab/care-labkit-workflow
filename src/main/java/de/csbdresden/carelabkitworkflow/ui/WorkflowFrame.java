@@ -310,8 +310,8 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		final String keyThresholdUp = "thresholdUp";
 		inputMap.put( KeyStroke.getKeyStroke( "released LEFT" ), keyThresholdDown );
 		inputMap.put( KeyStroke.getKeyStroke( "released RIGHT" ), keyThresholdUp );
-		actionMap.put( keyThresholdDown, new ChangeThresholdAction( keyThresholdDown, -0.05f ) );
-		actionMap.put( keyThresholdUp, new ChangeThresholdAction( keyThresholdUp, +0.05f ) );
+		actionMap.put( keyThresholdDown, new ChangeThresholdAction( keyThresholdDown, -0.01f ) );
+		actionMap.put( keyThresholdUp, new ChangeThresholdAction( keyThresholdUp, +0.01f ) );
 
 		final String keyThresholdManual = "manualThreshold";
 		final String keyThresholdOtsu = "otsuThreshold";
@@ -451,7 +451,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		@Override
 		public void actionPerformed( ActionEvent actionEvt )
 		{
-			setThresholdAction( actionEvt.getActionCommand(), ( float ) ( Math.round((wf.getThreshold() + change)*1000)/1000.0 ));
+			setThresholdAction( actionEvt.getActionCommand(), ( float ) ( Math.round((wf.getThreshold() + change)*100)/100.0 ));
 		}
 	}
 
@@ -656,8 +656,6 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 
 	private void setThresholdAction( final String command, final float ts )
 	{
-		if ( Math.abs( wf.getThreshold() - ts ) < 0.025 )
-			return;
 		System.out.println( command + " pressed" );
 		new Thread( () -> {
 			wf.setThreshold( ts );

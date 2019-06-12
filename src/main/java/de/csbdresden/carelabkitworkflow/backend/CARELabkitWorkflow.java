@@ -20,7 +20,6 @@ import net.imglib2.labkit.labeling.LabelingSerializer;
 import net.imglib2.labkit.models.DefaultSegmentationModel;
 import net.imglib2.labkit.models.ImageLabelingModel;
 import net.imglib2.labkit.utils.progress.StatusServiceProgressWriter;
-import net.imglib2.roi.labeling.ImgLabeling;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.ARGBType;
@@ -32,7 +31,6 @@ import net.imglib2.util.Intervals;
 import net.imglib2.util.Pair;
 import net.imglib2.util.ValuePair;
 import net.imglib2.view.Views;
-import org.apache.log4j.helpers.FileWatchdog;
 import org.scijava.Context;
 import org.scijava.app.StatusService;
 import org.scijava.command.CommandModule;
@@ -42,7 +40,6 @@ import org.scijava.plugin.Parameter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -166,7 +163,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 					.imageLabelingModel();
 
 			// load labeling from server file
-			Labeling labeling = Labeling.createEmpty( new ArrayList< String >(), getSegmentationInput() );
+			Labeling labeling = Labeling.createEmpty( new ArrayList<>(), getSegmentationInput() );
 			try
 			{
 				labeling = serializer.open( serverCommunication.labelingPNG2TIF() );
@@ -211,14 +208,22 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 	{
 		if ( getSegmentationInput() != null )
 		{
-			final Pair< T, T > minMax = getMinMax( getSegmentationInput() );
-			final T threshold = minMax.getB();
-			threshold.sub( minMax.getA() );
-			threshold.mul( segmentationStep.getThreshold() );
-			threshold.add( minMax.getA() );
+			final T threshold = getSegmentationInput().firstElement().copy();
+			threshold.setReal(mapToImgPercentiles(segmentationStep.getThreshold()));
 			final IterableInterval< BitType > thresholded = opService.threshold().apply( Views.iterable( getSegmentationInput() ), threshold );
 			segmentationStep.setLabeling( opService.labeling().cca( ( RandomAccessibleInterval< IntegerType > ) thresholded, StructuringElement.FOUR_CONNECTED ) );
 		}
+	}
+
+	private float mapToImgPercentiles(float threshold) {
+		//use minmax:
+//		Pair<T, T> minmax = opService.stats().minMax(getSegmentationInput());
+//		float res = minmax.getA().getRealFloat() + (minmax.getB().getRealFloat() - minmax.getA().getRealFloat())*threshold;
+		float lower = getSegmentationInputStep().getLowerPercentile();
+		float upper = getSegmentationInputStep().getUpperPercentile();
+		float res = lower + (upper-lower)*threshold;
+		System.out.println(res + " (" + lower + ", " + upper + ")");
+		return res;
 	}
 
 	private synchronized void runOtsuThreshold()
@@ -464,7 +469,7 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 	{
 
 		final T lp = iterableInterval.firstElement().createVariable();
-		opService.stats().percentile( lp, iterableInterval, 3.0 );
+		opService.stats().percentile( lp, iterableInterval, 1.0 );
 		final T up = iterableInterval.firstElement().createVariable();
 		opService.stats().percentile( up, iterableInterval, 99.0 );
 		return new ValuePair< T, T >( lp, up );
