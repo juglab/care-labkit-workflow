@@ -1,6 +1,7 @@
 package de.csbdresden.carelabkitworkflow.ui;
 
 import de.csbdresden.carelabkitworkflow.backend.CARELabkitWorkflow;
+import de.csbdresden.carelabkitworkflow.util.AveragedValue;
 import de.csbdresden.carelabkitworkflow.util.DampedValue;
 import jssc.SerialPort;
 import jssc.SerialPortEventListener;
@@ -47,8 +48,8 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 	static GraphicsDevice device = GraphicsEnvironment
 			.getLocalGraphicsEnvironment().getScreenDevices()[ 0 ];
 
-	DampedValue<FloatType> thresholdSliderVal = new DampedValue<>();
-	DampedValue<FloatType> sigmaSliderVal = new DampedValue<>();
+	AveragedValue<FloatType> thresholdSliderVal = new AveragedValue<>();
+	AveragedValue<FloatType> sigmaSliderVal = new AveragedValue<>();
 
 	public WorkflowFrame( final CARELabkitWorkflow< T, I > wf, String port1, final String port2 )
 	{
@@ -246,17 +247,17 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			default:
 				if ( text.contains( "S1" ) )
 				{
-					float sigma = Float.parseFloat( text.substring( 3 ) ) / 1024.f * 10.f;
+					float sigma = Float.parseFloat( text.substring( 3 ) ) / 1023.f * 10.f;
 					sigmaSliderVal.set(new FloatType(sigma));
 //						System.out.println("sigma: " + sigmaSliderVal.get());
 					setSigmaAction( "sigmaChanged_" + String.valueOf( sigmaSliderVal.get() ), sigmaSliderVal.get().getRealFloat() );
 				}
 				else if ( text.contains( "S2" ) )
 				{
-					float ts = Float.parseFloat( text.substring( 3 ) ) / 1024.f;
-					thresholdSliderVal.set(new FloatType(ts));
-//						System.out.println("threshold: " + thresholdSliderVal.get());
-					setThresholdAction( "thresholdValue_" + String.valueOf( thresholdSliderVal.get() ), thresholdSliderVal.get().getRealFloat() );
+					thresholdSliderVal.set(new FloatType(Float.parseFloat( text.substring( 3 ) ) ));
+					float ts = Math.round(1000*thresholdSliderVal.get().getRealFloat() / 1023.f)/1000.f;
+//						System.out.println("threshold: " + text.substring( 3 ));
+					setThresholdAction( "thresholdValue_" + String.valueOf( ts ), ts);
 				}
 				break;
 			}
@@ -451,7 +452,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		@Override
 		public void actionPerformed( ActionEvent actionEvt )
 		{
-			setThresholdAction( actionEvt.getActionCommand(), ( float ) ( Math.round((wf.getThreshold() + change)*100)/100.0 ));
+			setThresholdAction( actionEvt.getActionCommand(), ( wf.getThreshold() + change ));
 		}
 	}
 
@@ -580,7 +581,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			}
 			wf.requestUpdate();
 			updateOnInputChange();
-		} ).run();
+		} ).start();
 	}
 
 	private void removeInput( String command )
@@ -590,7 +591,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			wf.getInputStep().setActivated( false );
 			wf.requestUpdate();
 			updateOnInputChange();
-		} ).run();
+		} ).start();
 	}
 
 	private void changeNetworkAction( final String command, final int id )
@@ -602,7 +603,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			wf.setDenoisingMethod( id );
 			wf.requestUpdate();
 			updateOnDenoiseChange();
-		} ).run();
+		} ).start();
 	}
 
 	private void removeNetwork( final String command )
@@ -613,7 +614,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			wf.getNetworkStep().setActivated( false );
 			wf.requestUpdate();
 			updateOnDenoiseChange();
-		} ).run();
+		} ).start();
 	}
 
 	private void changeSegmentationAction( final String command, final int id )
@@ -625,7 +626,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			wf.setSegmentation( id );
 			wf.requestUpdate();
 			updateOnThresholdChange();
-		} ).run();
+		} ).start();
 	}
 
 	private void removeSegmentation( final String command )
@@ -636,7 +637,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			wf.getSegmentationStep().setActivated( false );
 			wf.requestUpdate();
 			updateOnThresholdChange();
-		} ).run();
+		} ).start();
 	}
 
 	private void setSigmaAction( final String command, final float sigma )
@@ -651,11 +652,15 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 				wf.requestUpdate();
 				updateOnDenoiseChange();
 			}
-		} ).run();
+		} ).start();
 	}
 
 	private void setThresholdAction( final String command, final float ts )
 	{
+//		float roundedTs = (float) (Math.round(ts * 10) / 10.0);
+
+		if(Math.abs(wf.getThreshold() - ts) < 0.01) return;
+
 		System.out.println( command + " pressed" );
 		new Thread( () -> {
 			wf.setThreshold( ts );
@@ -664,7 +669,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 				wf.requestUpdate();
 				updateOnThresholdChange();
 			}
-		} ).run();
+		} ).start();
 	}
 
 	private void close()
