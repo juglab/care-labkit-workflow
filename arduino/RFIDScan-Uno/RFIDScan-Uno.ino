@@ -42,7 +42,6 @@
 
 int value1 = -1;
 int value2 = -1;
-int value3 = -1;
 
 // List of Tags UIDs that are allowed for the first reader
 byte tagarray_SS1[][4] = {
@@ -147,6 +146,37 @@ void loop() {
     }
     
     rfid_tag_present[reader] = _tag_found[reader];
+
+    // check if RFID tag got switched
+    if (rfid_tag_present[reader] && rfid_tag_present_prev[reader]){
+      boolean foundTag = false;
+      for (int x = 0; x < tagsNum(reader) && !foundTag; x++)                  // tagarray's row
+      {
+        for (int i = 0; i < mfrc522[reader].uid.size; i++)        //tagarray's columns
+        {
+          if ( mfrc522[reader].uid.uidByte[i] != getTag(reader, x)[i])  //Comparing the UID in the buffer to the UID in the tag array.
+          {
+            break;
+          }
+          else
+          {
+            if (i == mfrc522[reader].uid.size - 1)                // Test if we browesed the whole UID.
+            {
+              foundTag = true;
+              if(x != getValue(reader)) {
+                triggerSerialRemove(reader);
+                setValue(reader, x);
+                triggerSerialAdd(reader, x); 
+              }
+            }
+          }
+        }
+      }
+      if(!foundTag && getValue(reader) != -1) {
+        setValue(reader, -1);
+        denyTag(reader);
+      }
+    }
     
     // rising edge
     if (rfid_tag_present[reader] && !rfid_tag_present_prev[reader]){
@@ -164,12 +194,14 @@ void loop() {
             if (i == mfrc522[reader].uid.size - 1)                // Test if we browesed the whole UID.
             {
               foundTag = true;
+              setValue(reader, x);
               triggerSerialAdd(reader, x); 
             }
           }
         }
       }
       if(!foundTag) {
+        setValue(reader, -1);
         denyTag(reader);
       }
     }
@@ -188,6 +220,16 @@ void triggerSerialAdd(int reader, int tag) {
     String out = "R";
     out = out + reader + "_T" + tag;
     writeString(out);
+}
+
+void setValue(int reader, int tag) {
+  if(reader == 0) value1 = tag;
+  if(reader == 1) value2 = tag;
+}
+
+int getValue(int reader) {
+  if(reader == 0) return value1;
+  if(reader == 1) return value2 ;
 }
 
 void triggerSerialRemove(int reader) {

@@ -133,7 +133,7 @@ void loop() {
 
   readFromUno();
 
-  readSliders();
+//  readSliders();
 
   for (uint8_t reader = 0; reader < NR_OF_READERS; reader++) {
 
@@ -166,6 +166,37 @@ void loop() {
     }
     
     rfid_tag_present[reader] = _tag_found[reader];
+
+    // check if RFID tag got switched
+    if (rfid_tag_present[reader] && rfid_tag_present_prev[reader]){
+      boolean foundTag = false;
+      for (int x = 0; x < tagsNum(reader) && !foundTag; x++)                  // tagarray's row
+      {
+        for (int i = 0; i < mfrc522[reader].uid.size; i++)        //tagarray's columns
+        {
+          if ( mfrc522[reader].uid.uidByte[i] != getTag(reader, x)[i])  //Comparing the UID in the buffer to the UID in the tag array.
+          {
+            break;
+          }
+          else
+          {
+            if (i == mfrc522[reader].uid.size - 1)                // Test if we browesed the whole UID.
+            {
+              foundTag = true;
+              if(x != getValue(2)) {
+                resetPixels(2);
+                setPixelsValue(2, x);
+                triggerKeyboard(2, x); 
+              }
+            }
+          }
+        }
+      }
+      if(!foundTag && getValue(2) != -1) {
+        setPixelsValue(2, -1);
+        denyTag(2);
+      }
+    }
     
     // rising edge
     if (rfid_tag_present[reader] && !rfid_tag_present_prev[reader]){
@@ -190,6 +221,7 @@ void loop() {
         }
       }
       if(!foundTag) {
+        setPixelsValue(2, -1);
         denyTag(2);
       }
     }
@@ -200,7 +232,7 @@ void loop() {
       triggerGone(2);
     }
     
-    delay(200);
+    delay(20);
 
   }
 }
@@ -247,10 +279,6 @@ void readFromUno() {
       }
     }
   }
-}
-
-void recvWithEndMarker() {
- 
 }
 
 void readSliders() {
@@ -307,26 +335,39 @@ void denyTag(int reader) {
 }
 
 void setPixelsValueDenied(int reader) {
-  int red[] = {255, 0, 0};
-  setPixelsValue(reader, red);
+  int color[] = {255, 0, 0};
+  for(int i=0; i<NUMPIXELS; i++) {
+    if(i%8<3)
+      pixels[reader].setPixelColor(i, pixels[reader].Color(color[0],color[1],color[2]));
+    else
+      pixels[reader].setPixelColor(i, pixels[reader].Color(0,0,0));
+  }
+  pixels[reader].show();
 }
 
 void setPixelsValue(int reader, int value) {
-
-  if(value < 0) return;
   
   if(reader == 0) {
     value1 = value;
+    if(value < 0) return;
     rotatePixelsValue(reader, value, col1);
   }
   if(reader == 1) {
     value2 = value;
+    if(value < 0) return;
     rotatePixelsValue(reader, value, col2);
   }
   if(reader == 2) {
     value3 = value;
+    if(value < 0) return;
     rotatePixelsValue(reader, value, col3);
   }
+}
+
+int getValue(int reader) {
+  if(reader == 0) return value1;
+  if(reader == 1) return value2;
+  if(reader == 2) return value3;
 }
 
 void setPixelsValue(int reader, int color[]) {
