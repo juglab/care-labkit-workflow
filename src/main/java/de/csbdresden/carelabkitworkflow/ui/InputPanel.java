@@ -25,16 +25,15 @@ public class InputPanel< T extends RealType< T > & NativeType< T > > extends Abs
 
 	public void update()
 	{
-		if ( !inputStep.isActivated() )
-		{
-			showInBdv( null );
-		}
-		else
-		{
-			showInBdv( inputStep );
+		runOnEventDispatchThread(() -> {
+			if (!inputStep.isActivated()) {
+				showInBdv(null);
+			} else {
+				showInBdv(inputStep);
 
-		}
-		updateMethodLabel();
+			}
+			updateMethodLabel();
+		});
 	}
 
 	@Override
@@ -45,23 +44,27 @@ public class InputPanel< T extends RealType< T > & NativeType< T > > extends Abs
 
 	public void reset()
 	{
-		bdv.getViewerPanel().removeAllSources();
-		numberLabel.setText( "" );
-		methodLabel.setText( "" );
-		repaint();
+		runOnEventDispatchThread(() -> {
+			bdv.getViewerPanel().removeAllSources();
+			numberLabel.setText( "" );
+			methodLabel.setText( "" );
+			repaint();
+		});
 	}
 
 	@Override
 	protected void updateMethodLabel()
 	{
-		if ( inputStep.isActivated() )
-		{
-			methodLabel.setText( inputStep.getName() );
-		}
-		else
-		{
-			methodLabel.setText( "" );
-		}
+		runOnEventDispatchThread(() -> {
+			if ( inputStep.isActivated() )
+			{
+				methodLabel.setText( inputStep.getName() );
+			}
+			else
+			{
+				methodLabel.setText( "" );
+			}
+		});
 	}
 
 	@Override

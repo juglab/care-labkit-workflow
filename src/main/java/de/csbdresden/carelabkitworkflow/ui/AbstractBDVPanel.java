@@ -7,10 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 
-import javax.swing.BorderFactory;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextPane;
+import javax.swing.*;
 
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
@@ -76,43 +73,40 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 
 	public void init( final WorkflowFrame< T, ? extends IntegerType< ? > > parent, final String title )
 	{
-		setLayout( new MigLayout( "insets 10 10 10 10", "[center]", "[][][]" ) );
-		final JLabel titleLabel = new JLabel( title );
-		titleLabel.setFont( new Font( "Ubuntu", Font.BOLD, 52 ) );
-		titleLabel.setBorder( BorderFactory.createEmptyBorder( 20, 2, 20, 2 ) );
-		add( titleLabel, "wrap" );
-		super.initStep();
-		InputTriggerConfig config = null;
-		try
-		{
-			config = new InputTriggerConfig( YamlConfigIO.read( this.getClass().getResource( "block_bdv_config.yaml" ).getPath() ) );
-		}
-		catch ( IllegalArgumentException | IOException e )
-		{
-			e.printStackTrace();
-		}
-		
-		bdv = new BdvHandlePanel( parent, Bdv.options().is2D().inputTriggerConfig( config ).preferredSize( 200, 200 ).accumulateProjectorFactory( myFactory ) );
-		if ( bgColor != null )
-		{
-			bdv.getViewerPanel().setBackground( bgColor );
-		}
-		bdv.getViewerPanel().setMinimumSize( new Dimension( 20, 20 ) );
-		add( bdv.getViewerPanel(), "push, span, grow, wrap" );
-		infoPanel = new JPanel( new MigLayout( "fillx", "[]", "[]" ) );
-		infoPanel.setBackground( Color.DARK_GRAY );
-		infoPanel.setPreferredSize( new Dimension( 200, 200 ) );
-		methodLabel = new JLabel( "" );
-		methodLabel.setFont(new Font( "Ubuntu", Font.BOLD, 48 ));
-		methodLabel.setForeground( Color.WHITE );
-		numberLabel = new JLabel( "" );
-		numberLabel.setFont( new Font( "Ubuntu", Font.BOLD, 32 ) );
-		numberLabel.setForeground( Color.WHITE );
-		infoPanel.add( methodLabel, "wrap" );
-		infoPanel.add( numberLabel, "wrap" );
-		add( infoPanel, "grow" );
-		initStep();
-		revalidate();
+		runOnEventDispatchThread(() -> {
+			setLayout(new MigLayout("insets 10 10 10 10", "[center]", "[][][]"));
+			final JLabel titleLabel = new JLabel(title);
+			titleLabel.setFont(new Font("Ubuntu", Font.BOLD, 52));
+			titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 2, 20, 2));
+			add(titleLabel, "wrap");
+			super.initStep();
+			InputTriggerConfig config = null;
+			try {
+				config = new InputTriggerConfig(YamlConfigIO.read(this.getClass().getResource("block_bdv_config.yaml").getPath()));
+			} catch (IllegalArgumentException | IOException e) {
+				e.printStackTrace();
+			}
+			bdv = new BdvHandlePanel(parent, Bdv.options().is2D().inputTriggerConfig(config).preferredSize(200, 200).accumulateProjectorFactory(myFactory));
+			if (bgColor != null) {
+				bdv.getViewerPanel().setBackground(bgColor);
+			}
+			bdv.getViewerPanel().setMinimumSize(new Dimension(20, 20));
+			add(bdv.getViewerPanel(), "push, span, grow, wrap");
+			infoPanel = new JPanel(new MigLayout("fillx", "[]", "[]"));
+			infoPanel.setBackground(Color.DARK_GRAY);
+			infoPanel.setPreferredSize(new Dimension(200, 200));
+			methodLabel = new JLabel("");
+			methodLabel.setFont(new Font("Ubuntu", Font.BOLD, 48));
+			methodLabel.setForeground(Color.WHITE);
+			numberLabel = new JLabel("");
+			numberLabel.setFont(new Font("Ubuntu", Font.BOLD, 32));
+			numberLabel.setForeground(Color.WHITE);
+			infoPanel.add(methodLabel, "wrap");
+			infoPanel.add(numberLabel, "wrap");
+			add(infoPanel, "grow");
+			initStep();
+			revalidate();
+		});
 	}
 
 	public void showInBdv( final AbstractWorkflowImgStep< T > step )

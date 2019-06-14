@@ -43,55 +43,56 @@ public class ResultPanel extends AbstractProgressPanel
 
 	public void init( final String title )
 	{
-		setLayout( new MigLayout( "fillx, insets 10 10 10 10", "[center]", "[][][]" ) );
-		final JLabel titleLabel = new JLabel( title );
-		titleLabel.setFont( new Font( "Ubuntu", Font.BOLD, 52 ) );
-		titleLabel.setBorder( BorderFactory.createEmptyBorder( 20, 20, 20, 20 ) );
-		add( titleLabel, "wrap" );
-		result = new JLabel();
-		result.setFont( font );
-		add( result, "pos 0.5al 0.5al, wrap" );
+		runOnEventDispatchThread(() -> {
+			setLayout(new MigLayout("fillx, insets 10 10 10 10", "[center]", "[][][]"));
+			final JLabel titleLabel = new JLabel(title);
+			titleLabel.setFont(new Font("Ubuntu", Font.BOLD, 52));
+			titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+			add(titleLabel, "wrap");
+			result = new JLabel();
+			result.setFont(font);
+			add(result, "pos 0.5al 0.5al, wrap");
 
-		statLabel = new JLabel( "SEG-Score Statistik" );
-		statLabel.setFont( new Font( "Ubuntu", Font.BOLD, 48 ) );
-		add( statLabel, "pos 0.5al 0.70al" );
+			statLabel = new JLabel("SEG-Score Statistik");
+			statLabel.setFont(new Font("Ubuntu", Font.BOLD, 48));
+			add(statLabel, "pos 0.5al 0.70al");
 
-		nameLabel = new JLabel( "" );
-		nameLabel.setFont( new Font( "Ubuntu", Font.BOLD, 44 ) );
-		add( nameLabel, "pos 0.5al 0.75al" );
+			nameLabel = new JLabel("");
+			nameLabel.setFont(new Font("Ubuntu", Font.BOLD, 44));
+			add(nameLabel, "pos 0.5al 0.75al");
 
-		super.initStep();
+			super.initStep();
+		});
 	}
 
 	public void update()
 	{
-		showOutput( outputStep.getResult() );
-		nameLabel.setText( outputStep.getInputName() );
-		if ( outputStep.getInputName() == CARELabkitWorkflow.TRIBOLIUM_NAME )
-		{
-			active = true;
-			stats_idx = 0;
-		}
-		else if ( outputStep.getInputName() == CARELabkitWorkflow.PLANARIA_NAME )
-		{
-			active = true;
-			stats_idx = 1;
-		}
-		else
-		{
-			active = false;
-			stats_idx = -1;
-		}
-		if(stats_idx < 0) return;
-		stats.get( stats_idx ).update( outputStep.getResult() );
+		runOnEventDispatchThread(() -> {
+			showOutput(outputStep.getResult());
+			nameLabel.setText(outputStep.getInputName());
+			if (outputStep.getInputName() == CARELabkitWorkflow.TRIBOLIUM_NAME) {
+				active = true;
+				stats_idx = 0;
+			} else if (outputStep.getInputName() == CARELabkitWorkflow.PLANARIA_NAME) {
+				active = true;
+				stats_idx = 1;
+			} else {
+				active = false;
+				stats_idx = -1;
+			}
+			if (stats_idx < 0) return;
+			stats.get(stats_idx).update(outputStep.getResult());
+		});
 	}
 
 	private void showOutput( final double output )
 	{
-		result.setText( output >= 0 ? String.valueOf( Math.round( output * 10000 ) / 100.0 ) + "%" : "?" );
-		statLabel.setVisible( true );
-		nameLabel.setVisible( true );
-		repaint();
+		runOnEventDispatchThread(() -> {
+			result.setText(output >= 0 ? String.valueOf(Math.round(output * 10000) / 100.0) + "%" : "?");
+			statLabel.setVisible(true);
+			nameLabel.setVisible(true);
+			repaint();
+		});
 	}
 
 	@Override
@@ -143,11 +144,13 @@ public class ResultPanel extends AbstractProgressPanel
 
 	public void reset()
 	{
-		result.setText( "" );
-		active = false;
-		statLabel.setVisible( false );
-		nameLabel.setVisible( false );
-		repaint();
+		runOnEventDispatchThread(() -> {
+			result.setText("");
+			active = false;
+			statLabel.setVisible(false);
+			nameLabel.setVisible(false);
+			repaint();
+		});
 	}
 
 }
