@@ -46,6 +46,7 @@ public class InputPanel< T extends RealType< T > & NativeType< T > > extends Abs
 	{
 //		runOnEventDispatchThread(() -> {
 			bdv.getViewerPanel().removeAllSources();
+			proxySource = null;
 			numberLabel.setText( "" );
 			methodLabel.setText( "" );
 			repaint();

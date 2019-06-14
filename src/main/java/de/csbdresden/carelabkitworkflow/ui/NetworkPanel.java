@@ -48,6 +48,7 @@ public class NetworkPanel< T extends RealType< T > & NativeType< T > > extends A
 	{
 //		runOnEventDispatchThread(() -> {
 			bdv.getViewerPanel().removeAllSources();
+			proxySource = null;
 			numberLabel.setText("");
 			methodLabel.setText("");
 			repaint();

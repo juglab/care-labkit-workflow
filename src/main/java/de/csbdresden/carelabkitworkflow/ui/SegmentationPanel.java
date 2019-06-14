@@ -145,6 +145,7 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 		if ( proxySource == null )
 		{
 			setProxySource( ( RandomAccessibleInterval< T > ) step.getImg() );
+			bdv.getViewerPanel().removeAllSources();
 			source = BdvFunctions.show( proxySource, "", Bdv.options().addTo( bdv ) );
 			source.setDisplayRange( step.getLowerPercentile(), step.getUpperPercentile() );
 		}
@@ -159,6 +160,8 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 	{
 //		runOnEventDispatchThread( () -> {
 			bdv.getViewerPanel().removeAllSources();
+			proxyLabeling = null;
+			proxySource = null;
 			numberLabel.setText( "" );
 			methodLabel.setText( "" );
 			repaint();
