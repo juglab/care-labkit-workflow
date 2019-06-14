@@ -141,64 +141,6 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 				"Threshold: " + segmentationStep.getThreshold() + ", calculated output " + outputStep.getResult() );
 	}
 
-	private synchronized void runLabkit()
-	{
-		Img img = getSegmentationInput();
-		if ( img != null )
-		{
-
-			ServerCommunication serverCommunication = new ServerCommunication();
-			context.inject( serverCommunication );
-
-			// init segmentation model, serializer, labeling model
-			DefaultSegmentationModel segmentationModel = new DefaultSegmentationModel( new DefaultInputImage(
-					img ), context );
-			LabelingSerializer serializer = new LabelingSerializer( context );
-			final ImageLabelingModel labelingModel = segmentationModel
-					.imageLabelingModel();
-
-			// load labeling from server file
-			Labeling labeling = Labeling.createEmpty( new ArrayList<>(), img );
-			try
-			{
-				labeling = serializer.open( serverCommunication.labelingPNG2TIF() );
-			}
-			catch ( IOException e )
-			{
-				e.printStackTrace();
-			}
-			labelingModel.labeling().set( labeling );
-			if ( labelingModel.labeling().get().getLabels().size() == 0 )
-			{
-				System.out.println( "no labels" );
-				return;
-			}
-
-			// train
-			segmentationModel.train( segmentationModel
-					.selectedSegmenter().get() );
-
-			// run segmentation
-			final ImagePlus segImgImagePlus = ImageJFunctions.wrap( img, "seginput" );
-			final Img<ARGBType> segImg = ImageJFunctions.wrap(segImgImagePlus);
-			Img< UnsignedByteType > segmentation = null;
-			try
-			{
-				segmentation = BatchSegmenter.segment( segImg,
-						segmentationModel.selectedSegmenter().get().segmenter(),
-						Intervals.dimensionsAsIntArray( segImg ),
-						new StatusServiceProgressWriter( statusService ) );
-			}
-			catch ( InterruptedException e )
-			{
-				segmentation = facUB.create( segImg );
-				e.printStackTrace();
-			}
-
-			segmentationStep.setLabeling( opService.labeling().cca( segmentation, StructuringElement.FOUR_CONNECTED ) );
-		}
-	}
-
 	private synchronized void runManualThreshold()
 	{
 		if ( getSegmentationInput() != null )
@@ -248,14 +190,6 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 	public synchronized void runSegmentation()
 	{
 		if ( !segmentationStep.isActivated() || getSegmentationInput() == null || !inputStep.isActivated() ) { return; }
-		if ( segmentationStep.getCurrentId() == 2 )
-		{
-			if ( labkitThread != null )
-				labkitThread.interrupt();
-			labkitThread = new Thread( () -> runLabkit() );
-			labkitThread.run();
-			labkitThread = null;
-		}
 		else if ( segmentationStep.getCurrentId() == 0 )
 		{
 			runManualThreshold();
@@ -289,7 +223,6 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 				denoisingStep.setImage( inputs.get( url ).getDenoised( denoisingStep.getModelUrl() ) );
 				setPercentiles( denoisingStep, denoisingStep.getImg() );
 			}
-			saveLabkitInput();
 			return;
 		}
 		if ( denoisingStep.getImg() != null ) { return; }
@@ -304,23 +237,6 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		{
 			e.printStackTrace();
 		}
-		saveLabkitInput();
-	}
-
-	private synchronized void saveLabkitInput() {
-		//labkit is activated and needs an updated input image
-		// upload segmentation input to server
-		if(labkitSaveImgThread != null && labkitSaveImgThread.isAlive()) {
-			labkitSaveImgThread.interrupt();
-		}
-		labkitSaveImgThread = new Thread( () -> {
-			ServerCommunication serverCommunication = new ServerCommunication();
-			context.inject( serverCommunication );
-			serverCommunication.uploadLabkitInputToServer( getSegmentationInput(),
-					getSegmentationInputStep().getLowerPercentile(),
-					getSegmentationInputStep().getUpperPercentile());
-		} );
-		labkitSaveImgThread.start();
 	}
 
 	public synchronized double getOutput()
@@ -348,9 +264,6 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 			else if ( url == "planaria.tif" )
 			{
 				inputStep.setName( PLANARIA_NAME );
-			}
-			if(!getNetworkStep().isActivated()) {
-				saveLabkitInput();
 			}
 			return;
 		}
@@ -385,9 +298,6 @@ public class CARELabkitWorkflow< T extends NativeType< T > & RealType< T >, I ex
 		catch ( IOException e )
 		{
 			e.printStackTrace();
-		}
-		if(!getNetworkStep().isActivated()) {
-			saveLabkitInput();
 		}
 	}
 
