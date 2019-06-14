@@ -573,7 +573,6 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 	{
 		if ( wf.needsUpdate() )
 		{
-
 			int inputID = -1;
 			while ( inputID != wf.getInputStep().getCurrentId() )
 			{
@@ -620,6 +619,10 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		if ( wf.getInputStep().isActivated() )
 		{
 			wf.getInputStep().setActivated( false );
+			inputPanel.reset();
+			networkPanel.reset();
+			segmentationPanel.reset();
+			outputPanel.reset();
 			wf.requestUpdate();
 			updateOnInputChange();
 		}

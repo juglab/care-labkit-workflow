@@ -32,7 +32,7 @@ public class InputPanel< T extends RealType< T > & NativeType< T > > extends Abs
 				showInBdv(inputStep);
 
 			}
-			updateMethodLabel();
+//			updateMethodLabel();
 		});
 	}
 
@@ -42,14 +42,14 @@ public class InputPanel< T extends RealType< T > & NativeType< T > > extends Abs
 		// nothing to do
 	}
 
-	public void reset()
+	public synchronized void reset()
 	{
-		runOnEventDispatchThread(() -> {
+//		runOnEventDispatchThread(() -> {
 			bdv.getViewerPanel().removeAllSources();
 			numberLabel.setText( "" );
 			methodLabel.setText( "" );
 			repaint();
-		});
+//		});
 	}
 
 	@Override

@@ -133,6 +133,9 @@ public class ResultPanel extends AbstractProgressPanel
 			if ( totalCount > 0 && active )
 			{
 				int bh = ( int ) ( stats.get( stats_idx ).getStatsFor( i ) * ( 0.2 * ( float ) h / ( float ) maxCount ) );
+				if (i == current) {
+					bh = ( int ) ( 0.2 * (float) h );
+				}
 				g2d.fillRect( spacer + i * increment, h - bh - 20, increment, bh );
 			}
 			g2d.setPaint( Color.darkGray );
@@ -142,15 +145,15 @@ public class ResultPanel extends AbstractProgressPanel
 		}
 	}
 
-	public void reset()
+	public synchronized void reset()
 	{
-		runOnEventDispatchThread(() -> {
+//		runOnEventDispatchThread(() -> {
 			result.setText("");
 			active = false;
 			statLabel.setVisible(false);
 			nameLabel.setVisible(false);
 			repaint();
-		});
+//		});
 	}
 
 }

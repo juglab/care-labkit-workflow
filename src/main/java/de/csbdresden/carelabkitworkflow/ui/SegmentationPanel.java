@@ -155,14 +155,14 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 		}
 	}
 
-	public void reset()
+	public synchronized void reset()
 	{
-		runOnEventDispatchThread( () -> {
-			bdv.getBdvHandle().getViewerPanel().removeAllSources();
+//		runOnEventDispatchThread( () -> {
+			bdv.getViewerPanel().removeAllSources();
 			numberLabel.setText( "" );
 			methodLabel.setText( "" );
 			repaint();
-		} );
+//		} );
 	}
 
 	@Override

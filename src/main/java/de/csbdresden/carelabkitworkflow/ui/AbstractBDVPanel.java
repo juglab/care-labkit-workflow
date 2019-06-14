@@ -117,6 +117,7 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 			if ( step.getImg() != null )
 			{
 				if ( proxySource == null ) {
+					bdv.getViewerPanel().removeAllSources();
 					setProxySource( ( RandomAccessibleInterval< T > ) step.getImg() );
 					source = BdvFunctions.show( proxySource, "", Bdv.options().addTo( bdv ) );
 					source.setDisplayRange( step.getLowerPercentile(), step.getUpperPercentile() );

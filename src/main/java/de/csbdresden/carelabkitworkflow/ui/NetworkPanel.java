@@ -44,14 +44,14 @@ public class NetworkPanel< T extends RealType< T > & NativeType< T > > extends A
 		// nothing to do
 	}
 
-	public void reset()
+	public synchronized void reset()
 	{
-		runOnEventDispatchThread(() -> {
-			bdv.getBdvHandle().getViewerPanel().removeAllSources();
+//		runOnEventDispatchThread(() -> {
+			bdv.getViewerPanel().removeAllSources();
 			numberLabel.setText("");
 			methodLabel.setText("");
 			repaint();
-		});
+//		});
 	}
 
 	@Override
