@@ -82,10 +82,6 @@ bool rfid_tag_present[NR_OF_READERS] = {false};
 int _rfid_error_counter[NR_OF_READERS] = {0};
 bool _tag_found[NR_OF_READERS] = {false};
 
-int col1[] = {int(255*lightness), int(0*lightness), int(90*lightness)}; //255, 49, 117
-int col2[] = {int(170*lightness), int(70*lightness), int(0*lightness)}; //197, 49, 255
-int col3[] = {int(0*lightness), int(10*lightness), int(205*lightness)}; //49, 193, 255
-
 char fromUno[4];
 
 void setup() {
@@ -346,6 +342,10 @@ void setPixelsValueDenied(int reader) {
 
 void setPixelsValue(int reader, int value) {
   
+  int col1[] = {int(255*lightness), int(0*lightness), int(90*lightness)}; //255, 49, 117
+  int col2[] = {int(170*lightness), int(70*lightness), int(0*lightness)}; //197, 49, 255
+  int col3[] = {int(0*lightness), int(10*lightness), int(205*lightness)}; //49, 193, 255
+  
   if(reader == 0) {
     value1 = value;
     if(value < 0) return;
@@ -386,7 +386,10 @@ void rotatePixelsValue(int reader, int value, int col[]) {
   }
 }
 
-void resetPixels(int reader) {  
+void resetPixels(int reader) {
+  int col1[] = {int(255*lightness), int(0*lightness), int(90*lightness)}; //255, 49, 117
+  int col2[] = {int(170*lightness), int(70*lightness), int(0*lightness)}; //197, 49, 255
+  int col3[] = {int(0*lightness), int(10*lightness), int(205*lightness)}; //49, 193, 255
   if(reader == 0) {
     resetPixels(reader, col1);
   }

@@ -43,7 +43,7 @@ public class ResultPanel extends AbstractProgressPanel
 
 	public void init( final String title )
 	{
-		runOnEventDispatchThread(() -> {
+//		runOnEventDispatchThread(() -> {
 			setLayout(new MigLayout("fillx, insets 10 10 10 10", "[center]", "[][][]"));
 			final JLabel titleLabel = new JLabel(title);
 			titleLabel.setFont(new Font("Ubuntu", Font.BOLD, 52));
@@ -62,7 +62,7 @@ public class ResultPanel extends AbstractProgressPanel
 			add(nameLabel, "pos 0.5al 0.75al");
 
 			super.initStep();
-		});
+//		});
 	}
 
 	public void update()

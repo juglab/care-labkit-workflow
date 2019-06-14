@@ -3,6 +3,7 @@ package de.csbdresden.carelabkitworkflow.ui;
 import java.awt.Color;
 
 import de.csbdresden.carelabkitworkflow.model.DenoisingStep;
+import de.csbdresden.carelabkitworkflow.model.InputStep;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
@@ -16,16 +17,19 @@ public class NetworkPanel< T extends RealType< T > & NativeType< T > > extends A
 
 	private final DenoisingStep< T > networkStep;
 
-	public NetworkPanel( final DenoisingStep< T > networkStep )
+	private InputStep< T > inputStep;
+
+	public NetworkPanel( final DenoisingStep< T > networkStep, final InputStep< T > inputStep )
 	{
 		this.networkStep = networkStep;
+		this.inputStep = inputStep;
 		setBackground( new Color( 255, 246, 49 ) );
 	}
 
 	public void update()
 	{
 		runOnEventDispatchThread(() -> {
-			if (!networkStep.isActivated()) {
+			if (!networkStep.isActivated() || !inputStep.isActivated()) {
 				showInBdv(null);
 				reset();
 			} else {

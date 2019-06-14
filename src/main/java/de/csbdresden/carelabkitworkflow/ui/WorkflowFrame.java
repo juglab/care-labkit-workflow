@@ -48,8 +48,9 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 	static GraphicsDevice device = GraphicsEnvironment
 			.getLocalGraphicsEnvironment().getScreenDevices()[ 0 ];
 
-	AveragedValue<FloatType> thresholdSliderVal = new AveragedValue<>();
-	AveragedValue<FloatType> sigmaSliderVal = new AveragedValue<>();
+	AveragedValue< FloatType > thresholdSliderVal = new AveragedValue<>();
+
+	AveragedValue< FloatType > sigmaSliderVal = new AveragedValue<>();
 
 	public WorkflowFrame( final CARELabkitWorkflow< T, I > wf, String port1, final String port2 )
 	{
@@ -62,21 +63,26 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 
 	}
 
-	private void watchLabkitLabelingFile() {
-		LabkitLabelingWatchFile someWatchFile = new LabkitLabelingWatchFile(LABKITLABELINGFILE);
+	private void watchLabkitLabelingFile()
+	{
+		LabkitLabelingWatchFile someWatchFile = new LabkitLabelingWatchFile( LABKITLABELINGFILE );
 		someWatchFile.start();
 	}
 
-	private class LabkitLabelingWatchFile extends FileWatchdog {
+	private class LabkitLabelingWatchFile extends FileWatchdog
+	{
 
-		protected LabkitLabelingWatchFile(String filename) {
-			super(filename);
-			setDelay(1000);
+		protected LabkitLabelingWatchFile( String filename )
+		{
+			super( filename );
+			setDelay( 1000 );
 		}
 
 		@Override
-		protected void doOnChange() {
-			if(wf.getSegmentationStep().getCurrentId() == 2) {
+		protected void doOnChange()
+		{
+			if ( wf.getSegmentationStep().getCurrentId() == 2 )
+			{
 				System.out.println( "update labkit" );
 				new Thread( () -> {
 					outputPanel.reset();
@@ -96,7 +102,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		workflows.setLayout( new MigLayout( "fill, gap 0, ins 20 0 20 0", "push[]push[]push[]push[]push" ) );
 
 		inputPanel = new InputPanel<>( wf.getInputStep() );
-		networkPanel = new NetworkPanel< T >( wf.getNetworkStep() );
+		networkPanel = new NetworkPanel< T >( wf.getNetworkStep(), wf.getInputStep() );
 		segmentationPanel = new SegmentationPanel< T, I >( wf.getSegmentationStep(), wf.getInputStep(), wf.getNetworkStep() );
 		outputPanel = new ResultPanel( wf.getOutputStep() );
 
@@ -212,56 +218,60 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			switch ( text )
 			{
 			case "R1_T0":
-				new Thread(() -> inputChanged( "input1", 0 )).start();
+				new Thread( () -> inputChanged( "input1", 0 ) ).start();
 				break;
 			case "R1_T1":
-				new Thread(() -> inputChanged( "input2", 1 )).start();
+				new Thread( () -> inputChanged( "input2", 1 ) ).start();
 				break;
 			case "R1_NO":
-				new Thread(() -> removeInput( "input removed" )).start();
+			case "R1_??":
+				new Thread( () -> inputChanged( "input removed", -1 ) ).start();
 				break;
 			case "R0_T0":
-				new Thread(() -> changeNetworkAction( "network1", 0 )).start();
+				new Thread( () -> changeNetworkAction( "network1", 0 ) ).start();
 				break;
 			case "R0_T1":
-				new Thread(() -> changeNetworkAction( "network2", 1 )).start();
+				new Thread( () -> changeNetworkAction( "network2", 1 ) ).start();
 				break;
 			case "R0_T2":
-				new Thread(() -> changeNetworkAction( "gaussFilter", 2 )).start();
+				new Thread( () -> changeNetworkAction( "gaussFilter", 2 ) ).start();
 				break;
 			case "R0_NO":
-				new Thread(() -> removeNetwork( "network removed" )).start();
+			case "R0_??":
+				new Thread( () -> changeNetworkAction( "network removed", -1 ) ).start();
 				break;
 			case "R2_T0":
-				new Thread(() -> changeSegmentationAction( "manualThreshold", 0 )).start();
+				new Thread( () -> changeSegmentationAction( "manualThreshold", 0 ) ).start();
 				break;
 			case "R2_T1":
-				new Thread(() -> changeSegmentationAction( "otsuThreshold", 1 )).start();
+				new Thread( () -> changeSegmentationAction( "otsuThreshold", 1 ) ).start();
 				break;
 			case "R2_T2":
-				new Thread(() -> changeSegmentationAction( "labkit", 2 )).start();
+				new Thread( () -> changeSegmentationAction( "labkit", 2 ) ).start();
 				break;
 			case "R2_NO":
-				new Thread(() -> removeSegmentation( "segmentation removed" )).start();
+			case "R2_??":
+				new Thread( () -> changeSegmentationAction( "segmentation removed", -1 ) ).start();
 				break;
 			default:
 				if ( text.contains( "S1" ) )
 				{
-					float sigma = Float.parseFloat(text.substring(3)) / 1023.f * 10.f;
-					sigmaSliderVal.set(new FloatType(sigma));
-					new Thread(() -> {
-						//						System.out.println("sigma: " + sigmaSliderVal.get());
-						setSigmaAction("sigmaChanged_" + String.valueOf(sigmaSliderVal.get()), sigmaSliderVal.get().getRealFloat());
-					}).start();
+					float sigma = Float.parseFloat( text.substring( 3 ) ) / 1023.f * 10.f;
+					sigmaSliderVal.set( new FloatType( sigma ) );
+					new Thread( () -> {
+						// System.out.println("sigma: " + sigmaSliderVal.get());
+						setSigmaAction( "sigmaChanged_" + String.valueOf( sigmaSliderVal.get() ), sigmaSliderVal.get().getRealFloat() );
+					} ).start();
 				}
 				else if ( text.contains( "S2" ) )
 				{
-					thresholdSliderVal.set(new FloatType(Float.parseFloat(text.substring(3))));
-					new Thread(() -> {
-						float ts = Math.round(1000 * thresholdSliderVal.get().getRealFloat() / 1023.f) / 1000.f;
-						//						System.out.println("threshold: " + text.substring( 3 ));
-						setThresholdAction("thresholdValue_" + String.valueOf(ts), ts);
-					}).start();
+					thresholdSliderVal.set( new FloatType( Float.parseFloat( text.substring( 3 ) ) ) );
+					new Thread( () -> {
+						float ts = Math.round( 1000 * thresholdSliderVal.get().getRealFloat() / 1023.f ) / 1000.f;
+						// System.out.println("threshold: " + text.substring( 3
+						// ));
+						setThresholdAction( "thresholdValue_" + String.valueOf( ts ), ts );
+					} ).start();
 				}
 				break;
 			}
@@ -360,7 +370,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 				{
 					inputChanged( actionEvt.getActionCommand(), id );
 				}
-			}).start();
+			} ).start();
 		}
 	}
 
@@ -382,13 +392,16 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		@Override
 		public void actionPerformed( ActionEvent actionEvt )
 		{
-			new Thread(() -> {
-				if (wf.getNetworkStep().isActivated() && id == wf.getNetworkStep().getCurrentId()) {
-					removeNetwork(actionEvt.getActionCommand());
-				} else {
-					changeNetworkAction(actionEvt.getActionCommand(), id);
+			new Thread( () -> {
+				if ( wf.getNetworkStep().isActivated() && id == wf.getNetworkStep().getCurrentId() )
+				{
+					removeNetwork( actionEvt.getActionCommand() );
 				}
-			}).start();
+				else
+				{
+					changeNetworkAction( actionEvt.getActionCommand(), id );
+				}
+			} ).start();
 		}
 	}
 
@@ -410,13 +423,16 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		@Override
 		public void actionPerformed( ActionEvent actionEvt )
 		{
-			new Thread(() -> {
-				if (wf.getSegmentationStep().isActivated() && id == wf.getSegmentationStep().getCurrentId()) {
-					removeSegmentation(actionEvt.getActionCommand());
-				} else {
-					changeSegmentationAction(actionEvt.getActionCommand(), id);
+			new Thread( () -> {
+				if ( wf.getSegmentationStep().isActivated() && id == wf.getSegmentationStep().getCurrentId() )
+				{
+					removeSegmentation( actionEvt.getActionCommand() );
 				}
-			}).start();
+				else
+				{
+					changeSegmentationAction( actionEvt.getActionCommand(), id );
+				}
+			} ).start();
 		}
 	}
 
@@ -434,7 +450,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		@Override
 		public void actionPerformed( final ActionEvent actionEvt )
 		{
-			new Thread(() -> setSigmaAction( actionEvt.getActionCommand(), ( float ) (Math.round((wf.getGaussSigma() + change)*100)/100.0) )).start();
+			new Thread( () -> setSigmaAction( actionEvt.getActionCommand(), ( float ) ( Math.round( ( wf.getGaussSigma() + change ) * 100 ) / 100.0 ) ) ).start();
 		}
 	}
 
@@ -456,7 +472,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		@Override
 		public void actionPerformed( ActionEvent actionEvt )
 		{
-			new Thread(() -> setThresholdAction( actionEvt.getActionCommand(), ( wf.getThreshold() + change ))).start();
+			new Thread( () -> setThresholdAction( actionEvt.getActionCommand(), ( wf.getThreshold() + change ) ) ).start();
 		}
 	}
 
@@ -504,7 +520,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			{
 				segmentationID = wf.getSegmentationStep().getCurrentId();
 				ts = wf.getThreshold();
-				
+
 				segmentationPanel.updateMethodLabel();
 				segmentationPanel.updateNumberLabel();
 				wf.runSegmentation();
@@ -578,62 +594,92 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 		}
 	}
 
-	private void inputChanged( final String command, final int id )
+	private synchronized void inputChanged( final String command, final int id )
+	{
+		if ( id == -1 )
+		{
+			removeInput( command );
+		}
+		else
+		{
+			System.out.println( command + " pressed" );
+			wf.getInputStep().setActivated( true );
+			wf.setInput( id );
+			if ( wf.getNetworkStep().isActivated() )
+			{
+				wf.setDenoisingMethod( wf.getNetworkStep().getCurrentId() );
+			}
+			wf.requestUpdate();
+			updateOnInputChange();
+		}
+	}
+
+	private synchronized void removeInput( String command )
 	{
 		System.out.println( command + " pressed" );
-		wf.getInputStep().setActivated( true );
-		wf.setInput( id );
+		if ( wf.getInputStep().isActivated() )
+		{
+			wf.getInputStep().setActivated( false );
+			wf.requestUpdate();
+			updateOnInputChange();
+		}
+	}
+
+	private synchronized void changeNetworkAction( final String command, final int id )
+	{
+		if ( id == -1 )
+		{
+			removeNetwork( command );
+		}
+		else
+		{
+			System.out.println( command + " pressed" );
+			wf.getNetworkStep().setActivated( true );
+			wf.setDenoisingMethod( id );
+			wf.requestUpdate();
+			updateOnDenoiseChange();
+		}
+	}
+
+	private synchronized void removeNetwork( final String command )
+	{
+		System.out.println( command + " pressed" );
+//		outputPanel.reset();
 		if ( wf.getNetworkStep().isActivated() )
 		{
-			wf.setDenoisingMethod( wf.getNetworkStep().getCurrentId() );
+			wf.getNetworkStep().setActivated( false );
+			wf.requestUpdate();
+			updateOnDenoiseChange();
 		}
-		wf.requestUpdate();
-		updateOnInputChange();
 	}
 
-	private void removeInput( String command )
+	private synchronized void changeSegmentationAction( final String command, final int id )
 	{
-		System.out.println( command + " pressed" );
-		wf.getInputStep().setActivated( false );
-		wf.requestUpdate();
-		updateOnInputChange();
+		if ( id == -1 )
+		{
+			removeSegmentation( command );
+		}
+		else
+		{
+			System.out.println( command + " pressed" );
+//		outputPanel.reset();
+			wf.getSegmentationStep().setActivated( true );
+			wf.setSegmentation( id );
+			wf.requestUpdate();
+			updateOnThresholdChange();
+		}
 	}
 
-	private void changeNetworkAction( final String command, final int id )
+	private synchronized void removeSegmentation( final String command )
 	{
 		System.out.println( command + " pressed" );
-		wf.getNetworkStep().setActivated( true );
-		wf.setDenoisingMethod( id );
-		wf.requestUpdate();
-		updateOnDenoiseChange();
-	}
-
-	private void removeNetwork( final String command )
-	{
-		System.out.println( command + " pressed" );
-		outputPanel.reset();
-		wf.getNetworkStep().setActivated( false );
-		wf.requestUpdate();
-		updateOnDenoiseChange();
-	}
-
-	private void changeSegmentationAction( final String command, final int id )
-	{
-		System.out.println( command + " pressed" );
-		outputPanel.reset();
-		wf.getSegmentationStep().setActivated( true );
-		wf.setSegmentation( id );
-		wf.requestUpdate();
-		updateOnThresholdChange();
-	}
-
-	private void removeSegmentation( final String command )
-	{
-		System.out.println( command + " pressed" );
-		outputPanel.reset();
-		wf.getSegmentationStep().setActivated( false );
-		wf.requestUpdate();
-		updateOnThresholdChange();
+//		outputPanel.reset();
+		if ( wf.getSegmentationStep().isActivated() )
+		{
+			wf.getSegmentationStep().setActivated( false );
+			wf.requestUpdate();
+			updateOnThresholdChange();
+		}
 	}
 
 	private void setSigmaAction( final String command, final float sigma )
@@ -651,7 +697,8 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 
 	private void setThresholdAction( final String command, final float ts )
 	{
-		if(Math.abs(wf.getThreshold() - ts) < 0.01) return;
+		if ( Math.abs( wf.getThreshold() - ts ) < 0.01 )
+			return;
 
 		System.out.println( command + " pressed" );
 		wf.setThreshold( ts );

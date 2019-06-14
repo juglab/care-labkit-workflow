@@ -73,7 +73,7 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 
 	public void init( final WorkflowFrame< T, ? extends IntegerType< ? > > parent, final String title )
 	{
-		runOnEventDispatchThread(() -> {
+//		runOnEventDispatchThread(() -> {
 			setLayout(new MigLayout("insets 10 10 10 10", "[center]", "[][][]"));
 			final JLabel titleLabel = new JLabel(title);
 			titleLabel.setFont(new Font("Ubuntu", Font.BOLD, 52));
@@ -106,7 +106,7 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 			add(infoPanel, "grow");
 			initStep();
 			revalidate();
-		});
+//		});
 	}
 
 	public void showInBdv( final AbstractWorkflowImgStep< T > step )
