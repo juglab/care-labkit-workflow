@@ -8,6 +8,7 @@ import bdv.util.BdvStackSource;
 import de.csbdresden.carelabkitworkflow.model.AbstractWorkflowImgStep;
 import de.csbdresden.carelabkitworkflow.model.InputStep;
 import de.csbdresden.carelabkitworkflow.model.DenoisingStep;
+import de.csbdresden.carelabkitworkflow.model.ForwardingRandomAccessibleInterval;
 import de.csbdresden.carelabkitworkflow.model.SegmentationStep;
 import de.csbdresden.carelabkitworkflow.util.ColorTableConverter;
 import de.csbdresden.carelabkitworkflow.util.RandomColorTable;
@@ -37,6 +38,8 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 
 	private InputStep< T > inputStep;
 
+	private ForwardingRandomAccessibleInterval< LabelingType< String > > proxyLabeling;
+
 	SegmentationPanel( final SegmentationStep< T, I > segmentationStep, final InputStep< T > inputStep, final DenoisingStep< T > networkStep )
 	{
 		this.segmentationStep = segmentationStep;
@@ -61,44 +64,82 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 
 	private void showSegmentation()
 	{
-		bdv.getBdvHandle().getViewerPanel().removeAllSources();
 		if ( inputStep.isActivated() )
 		{
 
 			if ( segmentationStep.getLabeling() != null )
 			{
-//				synchronized ( segmentationStep )
-//				{
-				RandomAccessibleInterval< LabelingType< String > > labeling = segmentationStep.getLabeling();
-
-				final LabelingMapping< String > mapping = Util.getTypeFromInterval( labeling ).getMapping();
-				final ColorTableConverter< String > conv = new ColorTableConverter< String >( mapping );
-				final RandomColorTable< T, String, I > segmentColorTable = new RandomColorTable<>( mapping, conv, bdv.getViewerPanel() );
-				conv.addColorTable( segmentColorTable );
-				segmentColorTable.fillLut();
-				segmentColorTable.update();
-
-				if ( networkStep.isActivated() )
+				synchronized ( segmentationStep )
 				{
-					displayInput( networkStep );
+					RandomAccessibleInterval< LabelingType< String > > labeling = segmentationStep.getLabeling();
+
+					final LabelingMapping< String > mapping = Util.getTypeFromInterval( labeling ).getMapping();
+					final ColorTableConverter< String > conv = new ColorTableConverter< String >( mapping );
+					final RandomColorTable< T, String, I > segmentColorTable = new RandomColorTable<>( mapping, conv, bdv.getViewerPanel() );
+					conv.addColorTable( segmentColorTable );
+					segmentColorTable.fillLut();
+					segmentColorTable.update();
+
+					if ( networkStep.isActivated() )
+					{
+						displayInput( networkStep );
+					}
+					else
+					{
+						displayInput( inputStep );
+					}
+					displayLabelingSource( labeling, conv );
+					bdv.getViewerPanel().requestRepaint();
 				}
-				else
-				{
-					displayInput( inputStep );
-				}
-				labelingSource = ( BdvStackSource< ARGBType > ) BdvFunctions.show( Converters.convert( labeling, conv, new ARGBType() ), String.valueOf( segmentationStep.getCurrentId() ), Bdv.options().addTo( bdv ) );
-				labelingSource.setDisplayRange( 0, 255 );
-				updateMethodLabel();
-				updateNumberLabel();
-//				}
 			}
+		}
+	}
+
+	private void displayLabelingSource( final RandomAccessibleInterval< LabelingType< String > > labeling, final ColorTableConverter< String > conv )
+	{
+		// Ask toby how one should do that?
+//		if (proxyLabeling == null ) {
+//			setProxyLabeling( labeling );
+//			labelingSource = ( BdvStackSource< ARGBType > ) BdvFunctions.show( Converters.convert( proxyLabeling, conv, new ARGBType() ), String.valueOf( segmentationStep.getCurrentId() ), Bdv.options().addTo( bdv ) );
+//			labelingSource.setDisplayRange( 0, 255 );
+//		} else {
+//			setProxyLabeling( labeling ); 
+//			labelingSource.setDisplayRange( 0, 255 );
+//		}
+		if ( labelingSource != null )
+		{
+			labelingSource.removeFromBdv();
+		}
+		labelingSource = ( BdvStackSource< ARGBType > ) BdvFunctions.show( Converters.convert( labeling, conv, new ARGBType() ), String.valueOf( segmentationStep.getCurrentId() ), Bdv.options().addTo( bdv ) );
+		labelingSource.setDisplayRange( 0, 255 );
+	}
+
+	private void setProxyLabeling( final RandomAccessibleInterval< LabelingType< String > > labeling )
+	{
+		if ( proxyLabeling == null )
+		{
+			proxyLabeling = new ForwardingRandomAccessibleInterval<>( labeling );
+		}
+		else
+		{
+			proxyLabeling.setSource( labeling );
 		}
 	}
 
 	private void displayInput( final AbstractWorkflowImgStep< T > step )
 	{
-		source = BdvFunctions.show( ( RandomAccessibleInterval< T > ) step.getImg(), segmentationStep.getName(), Bdv.options().addTo( bdv ) );
-		source.setDisplayRange( step.getLowerPercentile(), step.getUpperPercentile() );
+		if ( proxySource == null )
+		{
+			setProxySource( ( RandomAccessibleInterval< T > ) step.getImg() );
+			source = BdvFunctions.show( proxySource, "", Bdv.options().addTo( bdv ) );
+			source.setDisplayRange( step.getLowerPercentile(), step.getUpperPercentile() );
+		}
+		else
+		{
+			setProxySource( ( RandomAccessibleInterval< T > ) step.getImg() );
+			source.setDisplayRange( step.getLowerPercentile(), step.getUpperPercentile() );
+		}
+
 	}
 
 	public void reset()

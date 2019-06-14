@@ -1,4 +1,3 @@
-
 /**
    --------------------------------------------------------------------------------------------------------------------
    Example sketch/program showing how to read data from more than one PICC to serial.
@@ -133,7 +132,7 @@ void loop() {
 
   readFromUno();
 
-//  readSliders();
+  readSliders();
 
   for (uint8_t reader = 0; reader < NR_OF_READERS; reader++) {
 

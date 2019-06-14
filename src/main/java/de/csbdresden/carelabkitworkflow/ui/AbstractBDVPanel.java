@@ -23,9 +23,11 @@ import bdv.viewer.Source;
 import bdv.viewer.render.AccumulateProjectorFactory;
 import bdv.viewer.render.VolatileProjector;
 import de.csbdresden.carelabkitworkflow.model.AbstractWorkflowImgStep;
+import de.csbdresden.carelabkitworkflow.model.ForwardingRandomAccessibleInterval;
 import de.csbdresden.carelabkitworkflow.util.AccumulateProjectorAlphaBlendingARGB;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.IntegerType;
@@ -52,6 +54,8 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 	protected JLabel methodLabel;
 	
 	protected JLabel numberLabel;
+	
+	protected ForwardingRandomAccessibleInterval<T> proxySource;
 
 	final AccumulateProjectorFactory< ARGBType > myFactory = new AccumulateProjectorFactory< ARGBType >()
 	{
@@ -87,6 +91,7 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 		{
 			e.printStackTrace();
 		}
+		
 		bdv = new BdvHandlePanel( parent, Bdv.options().is2D().inputTriggerConfig( config ).preferredSize( 200, 200 ).accumulateProjectorFactory( myFactory ) );
 		if ( bgColor != null )
 		{
@@ -112,17 +117,35 @@ public abstract class AbstractBDVPanel< T extends RealType< T > & NativeType< T 
 
 	public void showInBdv( final AbstractWorkflowImgStep< T > step )
 	{
-		bdv.getBdvHandle().getViewerPanel().removeAllSources();
 		if ( step != null )
 		{
 
 			if ( step.getImg() != null )
 			{
-				source = BdvFunctions.show( ( RandomAccessibleInterval< T > ) step.getImg(), step.getName(), Bdv.options().addTo( bdv ) );
-				source.setDisplayRange( step.getLowerPercentile(), step.getUpperPercentile() );
-				updateMethodLabel();
-				updateNumberLabel();
+				if ( proxySource == null ) {
+					setProxySource( ( RandomAccessibleInterval< T > ) step.getImg() );
+					source = BdvFunctions.show( proxySource, "", Bdv.options().addTo( bdv ) );
+					source.setDisplayRange( step.getLowerPercentile(), step.getUpperPercentile() );
+				} else {
+					setProxySource( ( RandomAccessibleInterval< T > ) step.getImg() );
+					source.setDisplayRange( step.getLowerPercentile(), step.getUpperPercentile() );
+					bdv.getViewerPanel().requestRepaint();
+				}
+			} else {
+				bdv.getViewerPanel().removeAllSources();
+				proxySource = null;
 			}
+		} else {
+			bdv.getViewerPanel().removeAllSources();
+			proxySource = null;
+		}
+	}
+	
+	protected void setProxySource(final RandomAccessibleInterval< T > source) {
+		if (proxySource == null ) {
+			proxySource = new ForwardingRandomAccessibleInterval<>( source );
+		} else {
+			proxySource.setSource( source );
 		}
 	}
 

@@ -500,7 +500,9 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			{
 				segmentationID = wf.getSegmentationStep().getCurrentId();
 				ts = wf.getThreshold();
-
+				
+				segmentationPanel.updateMethodLabel();
+				segmentationPanel.updateNumberLabel();
 				wf.runSegmentation();
 				final boolean correctThreshold = wf.getSegmentationStep().getCurrentId() == 0 ? ts == wf.getThreshold() : true;
 				if ( segmentationID == wf.getSegmentationStep().getCurrentId() && correctThreshold )
@@ -533,6 +535,8 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			{
 				networkID = wf.getNetworkStep().getCurrentId();
 				sigma = wf.getGaussSigma();
+				networkPanel.updateMethodLabel();
+				networkPanel.updateNumberLabel();
 				wf.runDenoising();
 				if ( networkID == wf.getNetworkStep().getCurrentId() && sigma == wf.getGaussSigma() )
 				{
@@ -553,6 +557,7 @@ public class WorkflowFrame< T extends RealType< T > & NativeType< T >, I extends
 			int inputID = -1;
 			while ( inputID != wf.getInputStep().getCurrentId() )
 			{
+				inputPanel.updateMethodLabel();
 				inputID = wf.getInputStep().getCurrentId();
 				if ( inputID == wf.getInputStep().getCurrentId() )
 				{
