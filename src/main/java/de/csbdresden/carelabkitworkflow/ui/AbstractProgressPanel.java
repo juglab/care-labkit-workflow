@@ -1,7 +1,6 @@
 package de.csbdresden.carelabkitworkflow.ui;
 
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
+import javax.swing.*;
 
 public abstract class AbstractProgressPanel extends JPanel
 {
@@ -29,6 +28,14 @@ public abstract class AbstractProgressPanel extends JPanel
 	public void endProgress()
 	{
 		progressBar.setVisible( false );
+	}
+
+	protected void runOnEventDispatchThread(Runnable action) {
+		if(SwingUtilities.isEventDispatchThread()) {
+			action.run();
+		} else {
+			SwingUtilities.invokeLater(action);
+		}
 	}
 	
 }

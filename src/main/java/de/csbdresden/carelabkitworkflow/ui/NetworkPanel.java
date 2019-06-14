@@ -24,15 +24,14 @@ public class NetworkPanel< T extends RealType< T > & NativeType< T > > extends A
 
 	public void update()
 	{
-		if ( !networkStep.isActivated() )
-		{
-			showInBdv( null );
-			reset();
-		}
-		else
-		{
-			showInBdv( networkStep );
-		}
+		runOnEventDispatchThread(() -> {
+			if (!networkStep.isActivated()) {
+				showInBdv(null);
+				reset();
+			} else {
+				showInBdv(networkStep);
+			}
+		});
 	}
 
 	@Override
@@ -43,33 +42,35 @@ public class NetworkPanel< T extends RealType< T > & NativeType< T > > extends A
 
 	public void reset()
 	{
-		bdv.getBdvHandle().getViewerPanel().removeAllSources();
-		numberLabel.setText( "" );
-		methodLabel.setText( "" );
-		repaint();
+		runOnEventDispatchThread(() -> {
+			bdv.getBdvHandle().getViewerPanel().removeAllSources();
+			numberLabel.setText("");
+			methodLabel.setText("");
+			repaint();
+		});
 	}
 
 	@Override
 	protected void updateMethodLabel()
 	{
-		if ( networkStep.isActivated() )
-		{
-			methodLabel.setText( networkStep.getName() );
-		}
-		else
-		{
-			methodLabel.setText( "" );
-		}
+		runOnEventDispatchThread(() -> {
+			if (networkStep.isActivated()) {
+				methodLabel.setText(networkStep.getName());
+			} else {
+				methodLabel.setText("");
+			}
+		});
 	}
 
 	@Override
 	protected void updateNumberLabel()
 	{
-		if ( networkStep.isActivated() && networkStep.isGauss() )
-		{
-			numberLabel.setText( "   Sigma = " + String.valueOf( Math.round( networkStep.getGaussSigma() * 100)/100.0 ) );
-		} else {
-			numberLabel.setText( "" );
-		}
+		runOnEventDispatchThread(() -> {
+			if (networkStep.isActivated() && networkStep.isGauss()) {
+				numberLabel.setText("   Sigma = " + String.valueOf(Math.round(networkStep.getGaussSigma() * 100) / 100.0));
+			} else {
+				numberLabel.setText("");
+			}
+		});
 	}
 }

@@ -48,15 +48,17 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 
 	public void update()
 	{
-		if ( !segmentationStep.isActivated() )
-		{
-			showInBdv( null );
-			reset();
-		}
-		else
-		{
-			showSegmentation();
-		}
+		runOnEventDispatchThread(() -> {
+			if ( !segmentationStep.isActivated() )
+			{
+				showInBdv( null );
+				reset();
+			}
+			else
+			{
+				showSegmentation();
+			}
+		});
 	}
 
 	private void showSegmentation()
@@ -97,16 +99,19 @@ public class SegmentationPanel< T extends RealType< T > & NativeType< T >, I ext
 
 	private void displayInput( final AbstractWorkflowImgStep< T > step )
 	{
+		if(step.getImg() == null) return;
 		source = BdvFunctions.show( ( RandomAccessibleInterval< T > ) step.getImg(), segmentationStep.getName(), Bdv.options().addTo( bdv ) );
 		source.setDisplayRange( step.getLowerPercentile(), step.getUpperPercentile() );
 	}
 
 	public void reset()
 	{
-		bdv.getBdvHandle().getViewerPanel().removeAllSources();
-		numberLabel.setText( "" );
-		methodLabel.setText( "" );
-		repaint();
+		runOnEventDispatchThread(() -> {
+			bdv.getBdvHandle().getViewerPanel().removeAllSources();
+			numberLabel.setText( "" );
+			methodLabel.setText( "" );
+			repaint();
+		});
 	}
 
 	@Override
